@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Renderer</title>
+</head>
+<body>
+  <canvas id="c"></canvas>
+	<script src="wasm_exec.js"></script>
+	<script type="module">
+    import app from './app.js';
+
+    if (!WebAssembly.instantiateStreaming) { // polyfill
+			WebAssembly.instantiateStreaming = async (resp, importObject) => {
+				const source = await (await resp).arrayBuffer();
+				return await WebAssembly.instantiate(source, importObject);
+			};
+		}
+
+    const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
+    // This part goes after "const go = new Go();" declaration.
+    go.importObject.env = {
+        'add': function(x, y) {
+            return x + y
+        }
+        // ... other functions
+    };
+
+    WebAssembly.instantiateStreaming(fetch('wasm.wasm'), go.importObject).then(function (obj) {
+      const wasm = obj.instance;
+      go.run(wasm);
+
+      // Get A WebGL context
+      var canvas = document.querySelector("#c");
+      var gl = canvas.getContext("webgl2");
+      if (!gl) {
+        return;
+      }
+      
+      const render = app(gl);
+      let previousTime = 0;
+      const frameRequestCallback = (time) => {
+        if (previousTime) {
+          previousTime = time;
+        }
+        const slice = wasm.exports.update(time - previousTime);
+        const ptr = Number(slice >> 32n);
+        const len = Number(slice & 0xffffffffn);
+        const instances = new Uint8Array(wasm.exports.memory.buffer, ptr, len);
+        render(instances);
+        requestAnimationFrame(frameRequestCallback);
+      }
+      requestAnimationFrame(frameRequestCallback);
+    });
+	</script>
+</body>
+</html>
