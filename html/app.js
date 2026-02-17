@@ -5,17 +5,21 @@ var vertexShaderSource = `#version 300 es
 in vec4 a_position;
 in mat4 a_model_matrix;
 // in float a_texture_index;
+in vec4 a_color;
+uniform mat4 u_projection;
 
 // out float v_texture_index;
+out vec4 v_color;
 
 // all shaders have a main function
 void main() {
 
   // gl_Position is a special variable a vertex shader
   // is responsible for setting
-  gl_Position = a_model_matrix * a_position;
+  gl_Position = u_projection * a_model_matrix * a_position;
   
   // v_texture_index = a_texture_index;
+  v_color = a_color;
 }
 `;
 
@@ -26,13 +30,15 @@ var fragmentShaderSource = `#version 300 es
 precision highp float;
 
 // in float v_texture_index;
+in vec4 v_color;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
   // Just set the output to a constant redish-purple
-  outColor = vec4(1, 0, 0.5, 1);
+  // outColor = vec4(1, 0, 0.5, 1);
+  outColor = v_color;
 }
 `;
 
@@ -76,6 +82,8 @@ export default function(gl) {
   // look up where the vertex data needs to go.
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
   var modelMatrixAttributeLocation = gl.getAttribLocation(program, "a_model_matrix");
+  var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
+  var projectionUniformLocation = gl.getUniformLocation(program, "u_projection");
   // var textureIndexAttributeLocation = gl.getAttribLocation(program, "a_texture_index");
   
   // Create a vertex array object (attribute state)
@@ -91,10 +99,10 @@ export default function(gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
   var positions = [
-    0, 0,
-    0, 1,
-    1, 0,
-    1, 1,
+    -0.5, -0.5,
+    -0.5, 0.5,
+    0.5, -0.5,
+    0.5, 0.5,
   ];
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -115,15 +123,20 @@ export default function(gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
 
+  let myoffset = 0;
   const perInstanceDataSize = 4 * 16;
   // const perInstanceDataSize = 4 * 16 + 4;
   for (let i = 0; i < 4; i++) {
     const loc = modelMatrixAttributeLocation + i;
     gl.enableVertexAttribArray(loc);
-    const offset = i * 16;
-    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, perInstanceDataSize, offset);
+    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 4 * 16 + 16, myoffset);
     gl.vertexAttribDivisor(loc, 1);
+    myoffset += 16;
   }
+  
+  gl.enableVertexAttribArray(colorAttributeLocation);
+  gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, 4 * 16 + 16, myoffset);
+  gl.vertexAttribDivisor(colorAttributeLocation, 1);
   
   // gl.enableVertexAttribArray(textureIndexAttributeLocation);
   // gl.vertexAttribPointer(textureIndexAttributeLocation, 1, gl.FLOAT, false, perInstanceDataSize, 4 * 16);
@@ -140,7 +153,7 @@ export default function(gl) {
     // console.log('modelMatrix2', modelMatrix2);
     // console.log('textureIndex2', textureIndex2);
 
-    // webglUtils.resizeCanvasToDisplaySize(gl.canvas);
+    webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
     // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -151,12 +164,18 @@ export default function(gl) {
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
+    
+    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    gl.uniformMatrix4fv(projectionUniformLocation, false,
+        m4.orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1));
 
     // Bind the attribute/buffer set we want.
     gl.bindVertexArray(vao);
     
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(instances.buffer, instances.byteOffset, 4 * 4 * 2), gl.DYNAMIC_DRAW); // Float32Array conversion should happen outside
+    const tmp = new Float32Array(instances.buffer, instances.byteOffset, (4 * 4  + 4) * 2);
+    console.log(tmp);
+    gl.bufferData(gl.ARRAY_BUFFER, tmp, gl.DYNAMIC_DRAW); // Float32Array conversion should happen outside
     // gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances); // TODO
 
     // draw

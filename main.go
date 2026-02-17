@@ -1,11 +1,6 @@
 package main
 
-import "unsafe"
-
-type perInstanceData struct {
-	modelMatrix mat4x4
-	// textureIndex float32
-}
+import rl "github.com/bernhardfritz/renderer/lib"
 
 func main() {
 	println("adding two numbers:", add(2, 3)) // expecting 5
@@ -15,26 +10,12 @@ func main() {
 	select {}
 }
 
-var instances []perInstanceData
-
 //export update
 func update(deltaTime float64) uint64 {
-	instances = instances[:0]
-	instance1 := perInstanceData{}
-	mat4x4_identity(&instance1.modelMatrix)
-	mat4x4_translate_in_place(&instance1.modelMatrix, -0.5, -0.5, 0)
-	// instance1.textureIndex = 42
-	instances = append(instances, instance1)
-	instance2 := perInstanceData{}
-	mat4x4_identity(&instance2.modelMatrix)
-	// instance2.textureIndex = 43
-	instances = append(instances, instance2)
+	rl.DrawTexturePro(rl.Rectangle{X: 0, Y: 50, Width: 100, Height: 50}, 0, rl.Color{R: 255, G: 0, B: 128, A: 255})
+	rl.DrawTexturePro(rl.Rectangle{X: 150, Y: 100, Width: 50, Height: 100}, 0, rl.Color{R: 255, G: 128, B: 0, A: 255})
 
-	if instances == nil {
-		return 0
-	}
-
-	return uint64(uintptr(unsafe.Pointer(&instances[0])))<<32 | uint64(len(instances))
+	return rl.Next()
 }
 
 //export add
