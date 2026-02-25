@@ -1,9 +1,25 @@
 package main
 
-import rl "github.com/bernhardfritz/renderer/lib"
+import (
+	"embed"
+
+	rl "github.com/bernhardfritz/renderer/lib"
+)
+
+//go:embed resources/wabbit_alpha.png
+var ASSETS embed.FS
+
+func init() {
+	rl.AddFileSystem(ASSETS)
+}
 
 func main() {
 	println("adding two numbers:", add(2, 3)) // expecting 5
+	// var texture rl.Texture
+	texture := rl.LoadTexture("resources/wabbit_alpha.png")
+	println("texture", texture.ID, texture.Width, texture.Height)
+	// println(blah[0], blah[1], blah[2])
+	// println(texture.Id, texture.Width, texture.Height)
 	// mat4x4_identity(&modelMatrices[0])
 	// mat4x4_identity(&modelMatrices[1])
 	// mat4x4_translate_in_place(&modelMatrices[1], 1, 2, 3)
