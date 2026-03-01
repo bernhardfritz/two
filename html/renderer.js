@@ -30,12 +30,13 @@ var fragmentShaderSource = `#version 300 es
 // fragment shaders don't have a default precision so we need
 // to pick one. highp is a good default. It means "high precision"
 precision highp float;
+precision lowp sampler2DArray;
 
 // in float v_texture_index;
 in vec4 v_color;
 in vec2 v_uv;
 
-uniform sampler2D u_texture;
+uniform sampler2DArray u_texture;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
@@ -45,7 +46,7 @@ void main() {
   // outColor = vec4(1, 0, 0.5, 1);
   // outColor = v_color;
   // outColor = vec4(v_uv, 0, 1);
-  outColor = texture(u_texture, v_uv);
+  outColor = texture(u_texture, vec3(v_uv, 0)); // TODO don't hardcode texture index
 }
 `;
 
@@ -149,6 +150,9 @@ function renderer(gl) {
   // gl.enableVertexAttribArray(textureIndexAttributeLocation);
   // gl.vertexAttribPointer(textureIndexAttributeLocation, 1, gl.FLOAT, false, perInstanceDataSize, 4 * 16);
   // gl.vertexAttribDivisor(textureIndexAttributeLocation, 1);
+  
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     
   return (instances) => {
     // let byteOffset = instances.byteOffset;
@@ -167,11 +171,11 @@ function renderer(gl) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // Clear the canvas
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(1, 1, 1, 1); // TODO make background color configurable
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Tell it to use our program (pair of shaders)
-    gl.useProgram(program);
+    gl.useProgram(program); // TODO probably enough to call once instead of once per frame
     
     // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const projectionMatrix = m4.orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
@@ -180,9 +184,9 @@ function renderer(gl) {
     gl.uniform1i(textureUniformLocation, 0); // TODO shouldn't be hardcoded
 
     // Bind the attribute/buffer set we want.
-    gl.bindVertexArray(vao);
+    gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
     
-    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
     const tmp = new Float32Array(instances.buffer, instances.byteOffset, (4 * 4  + 4) * 2);
     // console.log(tmp);
     gl.bufferData(gl.ARRAY_BUFFER, tmp, gl.DYNAMIC_DRAW); // Float32Array conversion should happen outside

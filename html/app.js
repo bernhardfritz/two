@@ -14,8 +14,9 @@ function app(canvas, renderer) {
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm;
   const efs = {};
-  const textures = [];
-  const promises = [];
+  let bitmapPromises = [];
+  let maxBitmapWidth = 0;
+  let maxBitmapHeight = 0;
   // This part goes after "const go = new Go();" declaration.
   go.importObject.env = {
     'add': function(x, y) {
@@ -35,24 +36,17 @@ function app(canvas, renderer) {
       const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
       const width = dataView.getUint32(16); // PNG
       const height = dataView.getUint32(20);
-      const id = textures.length;
-      const texture = gl.createTexture();
+      const id = bitmapPromises.length;
       const blob = new Blob([data], { type: 'image/png' });
-      const promise = createImageBitmap(blob).then((bitmap) => {
-        gl.activeTexture(gl.TEXTURE0 + id)
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        bitmap.close();
-      }); // not ideal because texture is loaded asynchronously. as long as textures are loaded in main it would be possible to store promises and wait until all promises are resolved before starting the requestAnimationFrame loop
-      promises.push(promise);
+      const bitmap = createImageBitmap(blob);
+      bitmapPromises.push(bitmap);
+      maxBitmapWidth = Math.max(maxBitmapWidth, width);
+      maxBitmapHeight = Math.max(maxBitmapHeight, height);
       const bytes = mem.subarray(bytesPtr, bytesPtr + bytesLen)
       const bytesView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       bytesView.setUint32(0, id, true);
       bytesView.setUint32(4, width, true);
       bytesView.setUint32(8, height, true);
-      textures.push(texture);
-      // TODO this function should rather store textures in a TEXTURE_2D_ARRAY to allow for even more textures to be loaded
     }
     // ... other functions
   };
@@ -60,8 +54,20 @@ function app(canvas, renderer) {
   WebAssembly.instantiateStreaming(fetch('wasm.wasm'), go.importObject).then(async function (obj) {
     wasm = obj.instance;
     go.run(wasm);
-    await Promise.all(promises);
- 
+    const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    // TODO when loading textures, the clamping setting could also be relevant. see https://github.com/gfxfundamentals/webgl-fundamentals/discussions/396
+    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, maxBitmapWidth, maxBitmapHeight, bitmapPromises.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    bitmapPromises = bitmapPromises.map((bitmapPromise, index) => bitmapPromise.then((bitmap) => {
+      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, index, bitmap.width, bitmap.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+      bitmap.close();
+    }));
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+    await Promise.all(bitmapPromises);
+
     const render = renderer(gl);
     let previousTime = 0;
     const frameRequestCallback = (time) => {
