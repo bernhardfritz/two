@@ -20,7 +20,8 @@ type Color struct {
 }
 
 type perInstanceData struct {
-	modelMatrix mat4x4
+	modelMatrix   mat4x4
+	textureMatrix mat4x4
 	// textureIndex float32
 	color vec4
 }
@@ -44,6 +45,9 @@ func DrawTexturePro(dest Rectangle, rotation float32, tint Color) {
 	mat4x4_translate(&t, dest.X+dest.Width/2-0.5*dest.Width, dest.Y-dest.Height/2-0.5*dest.Height, 0) // -0.5 * scale because quad is offset for the purpose of dual usage as uv coordinates
 	mat4x4_mul(&instance.modelMatrix, r, s)
 	mat4x4_mul(&instance.modelMatrix, t, instance.modelMatrix)
+	mat4x4_identity(&instance.textureMatrix)
+	// TODO modify textureMatrix based on parameters
+	// However, consider if it would not make more sense to use an interface that is more like ctx.drawImage from browser web api
 	instance.color[0] = float32(tint.R) / 255
 	instance.color[1] = float32(tint.G) / 255
 	instance.color[2] = float32(tint.B) / 255

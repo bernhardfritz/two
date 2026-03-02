@@ -4,6 +4,7 @@ var vertexShaderSource = `#version 300 es
 // It will receive data from a buffer
 in vec4 a_position;
 in mat4 a_model_matrix;
+in mat4 a_texture_matrix;
 // in float a_texture_index;
 in vec4 a_color;
 uniform mat4 u_projection;
@@ -21,7 +22,7 @@ void main() {
   
   // v_texture_index = a_texture_index;
   v_color = a_color;
-  v_uv = a_position.xy;
+  v_uv = vec2(a_texture_matrix * a_position);
 }
 `;
 
@@ -79,6 +80,32 @@ function createProgram(gl, vertexShader, fragmentShader) {
   return undefined;
 }
 
+const sizes = {
+  vec4: Float32Array.BYTES_PER_ELEMENT * 4,
+  mat4: Float32Array.BYTES_PER_ELEMENT * 16,
+};
+
+function sizeof(attributes) {
+  let size = 0;
+  for (const [_key, value] of attributes) {
+    size += sizes[value];     
+  }
+
+  return size;  
+}
+
+function offsetof(attributes, member) {
+  let offset = 0;
+  for (const [key, value] of attributes) {
+    if (key === member) {
+      break;
+    }
+    offset += sizes[value];
+  }
+  
+  return offset;
+}
+
 function renderer(gl) {
   // create GLSL shaders, upload the GLSL source, compile the shaders
   var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -90,6 +117,7 @@ function renderer(gl) {
   // look up where the vertex data needs to go.
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
   var modelMatrixAttributeLocation = gl.getAttribLocation(program, "a_model_matrix");
+  var textureMatrixAttributeLocation = gl.getAttribLocation(program, "a_texture_matrix");
   var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
   var projectionUniformLocation = gl.getUniformLocation(program, "u_projection");
   var textureUniformLocation = gl.getUniformLocation(program, "u_texture");
@@ -132,19 +160,25 @@ function renderer(gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
 
-  let myoffset = 0;
-  const perInstanceDataSize = 4 * 16;
-  // const perInstanceDataSize = 4 * 16 + 4;
+  const attributes = new Map([
+    ['a_model_matrix', 'mat4'],
+    ['a_texture_matrix', 'mat4'],
+    ['a_color', 'vec4'],
+  ]);
   for (let i = 0; i < 4; i++) {
     const loc = modelMatrixAttributeLocation + i;
     gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, 4 * 16 + 16, myoffset);
+    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_model_matrix') + i * sizes.vec4);
     gl.vertexAttribDivisor(loc, 1);
-    myoffset += 16;
   }
-  
+  for (let i = 0; i < 4; i++) {
+    const loc = textureMatrixAttributeLocation + i;
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_texture_matrix') + i * sizes.vec4);
+    gl.vertexAttribDivisor(loc, 1);
+  }
   gl.enableVertexAttribArray(colorAttributeLocation);
-  gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, 4 * 16 + 16, myoffset);
+  gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_color'));
   gl.vertexAttribDivisor(colorAttributeLocation, 1);
   
   // gl.enableVertexAttribArray(textureIndexAttributeLocation);
@@ -187,7 +221,7 @@ function renderer(gl) {
     gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
     
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
-    const tmp = new Float32Array(instances.buffer, instances.byteOffset, (4 * 4  + 4) * 2);
+    const tmp = new Float32Array(instances.buffer, instances.byteOffset, (sizeof(attributes) / 4) * 2); // TODO number 2 shouldn't be hardcoded, it represents the number of instances
     // console.log(tmp);
     gl.bufferData(gl.ARRAY_BUFFER, tmp, gl.DYNAMIC_DRAW); // Float32Array conversion should happen outside
     // gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances); // TODO
