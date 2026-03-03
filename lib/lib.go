@@ -65,18 +65,25 @@ type Image struct {
 
 func DrawImage(image Image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight float32) {
 	instance := perInstanceData{}
-	var identity mat4x4
-	mat4x4_identity(&identity)
-	var s mat4x4
-	mat4x4_scale_aniso(&s, identity, dWidth, dHeight, 1)
-	var t mat4x4
-	mat4x4_translate(&t, dx+dWidth/2-0.5*dWidth, dy-dHeight/2-0.5*dHeight, 0) // -0.5 * scale because quad is offset for the purpose of dual usage as uv coordinates
-	mat4x4_mul(&instance.modelMatrix, t, s)
-	var s2 mat4x4
-	mat4x4_scale_aniso(&s2, identity, sWidth/float32(ctx.maxImageWidth), sHeight/float32(ctx.maxImageHeight), 1)
-	var t2 mat4x4
-	mat4x4_translate(&t2, sx/float32(ctx.maxImageWidth), sy/float32(ctx.maxImageHeight), 0)
-	mat4x4_mul(&instance.textureMatrix, t2, s2)
+	{
+		var t1 mat4x4
+		mat4x4_translate(&t1, -0.5, -0.5, 0) // -0.5 to compensate because quad is offset for the purpose of dual usage as uv coordinates
+		var s mat4x4
+		mat4x4_scale_aniso(&s, t1, dWidth, dHeight, 1)
+		var t2 mat4x4
+		mat4x4_translate(&t2, dx, dy, 0)
+		mat4x4_mul(&instance.modelMatrix, t2, s)
+	}
+	{
+		var identity mat4x4
+		mat4x4_identity(&identity)
+		var s mat4x4
+		mat4x4_scale_aniso(&s, identity, sWidth/float32(ctx.maxImageWidth), sHeight/float32(ctx.maxImageHeight), 1)
+		var t mat4x4
+		mat4x4_translate(&t, sx/float32(ctx.maxImageWidth), sy/float32(ctx.maxImageHeight), 0)
+		mat4x4_mul(&instance.textureMatrix, t, s)
+		instance.textureMatrix[3][3] = float32(image.ID)
+	}
 	ctx.instances = append(ctx.instances, instance)
 }
 
@@ -130,7 +137,6 @@ func LoadImage(fileName string) Image {
 	if height > ctx.maxImageHeight {
 		ctx.maxImageHeight = height
 	}
-	println("max", ctx.maxImageWidth, ctx.maxImageHeight)
 
 	return Image{
 		ID:     id,

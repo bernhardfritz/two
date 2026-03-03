@@ -6,9 +6,9 @@ import (
 	ctx "github.com/bernhardfritz/renderer/lib"
 )
 
-//go:embed resources/wabbit_alpha.png
+//go:embed resources/*
 var ASSETS embed.FS
-var bunny ctx.Image
+var bunny, raybunny ctx.Image
 
 func init() {
 	ctx.AddFileSystem(ASSETS)
@@ -19,6 +19,9 @@ func main() {
 	// var image rl.Texture
 	bunny = ctx.LoadImage("resources/wabbit_alpha.png")
 	println("bunny", bunny.ID, bunny.Width, bunny.Height)
+	raybunny = ctx.LoadImage("resources/raybunny.png")
+	println("raybunny", raybunny.ID, raybunny.Width, raybunny.Height)
+
 	// println(blah[0], blah[1], blah[2])
 	// println(texture.Id, texture.Width, texture.Height)
 	// mat4x4_identity(&modelMatrices[0])
@@ -31,8 +34,8 @@ func main() {
 func update(deltaTime float64) uint64 {
 	// rl.DrawTexturePro(rl.Rectangle{X: 0, Y: 50, Width: 100, Height: 50}, 0, rl.Color{R: 255, G: 0, B: 128, A: 255})
 	// rl.DrawTexturePro(rl.Rectangle{X: 150, Y: 100, Width: 50, Height: 100}, 0, rl.Color{R: 255, G: 128, B: 0, A: 255})
-	ctx.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 0, 50, 100, 50)
-	ctx.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 150, 100, 50, 100)
+	ctx.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 0, 0, float32(bunny.Width)*2, float32(bunny.Height)*2)
+	ctx.DrawImage(raybunny, 0, 0, float32(raybunny.Width), float32(raybunny.Height), 150, 100, float32(raybunny.Width)*2, float32(raybunny.Height)*2)
 
 	return ctx.Next()
 }

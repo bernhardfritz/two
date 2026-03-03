@@ -9,7 +9,7 @@ in mat4 a_texture_matrix;
 in vec4 a_color;
 uniform mat4 u_projection;
 
-// out float v_texture_index;
+out float v_texture_index;
 out vec4 v_color;
 out vec2 v_uv;
 
@@ -20,7 +20,7 @@ void main() {
   // is responsible for setting
   gl_Position = u_projection * a_model_matrix * a_position;
   
-  // v_texture_index = a_texture_index;
+  v_texture_index = a_texture_matrix[3][3];
   v_color = a_color;
   v_uv = vec2(a_texture_matrix * a_position);
 }
@@ -33,7 +33,7 @@ var fragmentShaderSource = `#version 300 es
 precision highp float;
 precision lowp sampler2DArray;
 
-// in float v_texture_index;
+in float v_texture_index;
 in vec4 v_color;
 in vec2 v_uv;
 
@@ -47,7 +47,7 @@ void main() {
   // outColor = vec4(1, 0, 0.5, 1);
   // outColor = v_color;
   // outColor = vec4(v_uv, 0, 1);
-  outColor = texture(u_texture, vec3(v_uv, 0)); // TODO don't hardcode texture index
+  outColor = texture(u_texture, vec3(v_uv, v_texture_index));
 }
 `;
 
