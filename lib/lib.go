@@ -27,7 +27,9 @@ type perInstanceData struct {
 }
 
 type context struct {
-	instances []perInstanceData
+	instances      []perInstanceData
+	maxImageWidth  int
+	maxImageHeight int
 }
 
 var ctx context
@@ -52,6 +54,29 @@ func DrawTexturePro(dest Rectangle, rotation float32, tint Color) {
 	instance.color[1] = float32(tint.G) / 255
 	instance.color[2] = float32(tint.B) / 255
 	instance.color[3] = float32(tint.A) / 255
+	ctx.instances = append(ctx.instances, instance)
+}
+
+type Image struct {
+	ID     int
+	Width  int
+	Height int
+}
+
+func DrawImage(image Image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight float32) {
+	instance := perInstanceData{}
+	var identity mat4x4
+	mat4x4_identity(&identity)
+	var s mat4x4
+	mat4x4_scale_aniso(&s, identity, dWidth, dHeight, 1)
+	var t mat4x4
+	mat4x4_translate(&t, dx+dWidth/2-0.5*dWidth, dy-dHeight/2-0.5*dHeight, 0) // -0.5 * scale because quad is offset for the purpose of dual usage as uv coordinates
+	mat4x4_mul(&instance.modelMatrix, t, s)
+	var s2 mat4x4
+	mat4x4_scale_aniso(&s2, identity, sWidth/float32(ctx.maxImageWidth), sHeight/float32(ctx.maxImageHeight), 1)
+	var t2 mat4x4
+	mat4x4_translate(&t2, sx/float32(ctx.maxImageWidth), sy/float32(ctx.maxImageHeight), 0)
+	mat4x4_mul(&instance.textureMatrix, t2, s2)
 	ctx.instances = append(ctx.instances, instance)
 }
 
@@ -86,26 +111,30 @@ func AddFileSystem(efs fs.FS) {
 	}
 }
 
-type Texture2D struct {
-	ID     int
-	Width  int
-	Height int
-}
-
-//export loadTexture
-func loadTexture(fileName string, bytes []byte)
+//export loadImage
+func loadImage(fileName string, bytes []byte)
 
 func littleEndianToUint32(bytes []byte) uint32 {
 	return *(*uint32)(unsafe.Pointer(&bytes[0]))
 }
 
-func LoadTexture(fileName string) Texture2D {
+func LoadImage(fileName string) Image {
 	var bytes [12]byte
-	loadTexture(fileName, bytes[:])
+	loadImage(fileName, bytes[:])
+	id := int(littleEndianToUint32(bytes[0:4]))
+	width := int(littleEndianToUint32(bytes[4:8]))
+	height := int(littleEndianToUint32(bytes[8:12]))
+	if width > ctx.maxImageWidth {
+		ctx.maxImageWidth = width
+	}
+	if height > ctx.maxImageHeight {
+		ctx.maxImageHeight = height
+	}
+	println("max", ctx.maxImageWidth, ctx.maxImageHeight)
 
-	return Texture2D{
-		ID:     int(littleEndianToUint32(bytes[0:4])),
-		Width:  int(littleEndianToUint32(bytes[4:8])),
-		Height: int(littleEndianToUint32(bytes[8:12])),
+	return Image{
+		ID:     id,
+		Width:  width,
+		Height: height,
 	}
 }

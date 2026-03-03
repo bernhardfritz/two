@@ -3,21 +3,22 @@ package main
 import (
 	"embed"
 
-	rl "github.com/bernhardfritz/renderer/lib"
+	ctx "github.com/bernhardfritz/renderer/lib"
 )
 
 //go:embed resources/wabbit_alpha.png
 var ASSETS embed.FS
+var bunny ctx.Image
 
 func init() {
-	rl.AddFileSystem(ASSETS)
+	ctx.AddFileSystem(ASSETS)
 }
 
 func main() {
 	println("adding two numbers:", add(2, 3)) // expecting 5
-	// var texture rl.Texture
-	texture := rl.LoadTexture("resources/wabbit_alpha.png")
-	println("texture", texture.ID, texture.Width, texture.Height)
+	// var image rl.Texture
+	bunny = ctx.LoadImage("resources/wabbit_alpha.png")
+	println("bunny", bunny.ID, bunny.Width, bunny.Height)
 	// println(blah[0], blah[1], blah[2])
 	// println(texture.Id, texture.Width, texture.Height)
 	// mat4x4_identity(&modelMatrices[0])
@@ -28,10 +29,12 @@ func main() {
 
 //export update
 func update(deltaTime float64) uint64 {
-	rl.DrawTexturePro(rl.Rectangle{X: 0, Y: 50, Width: 100, Height: 50}, 0, rl.Color{R: 255, G: 0, B: 128, A: 255})
-	rl.DrawTexturePro(rl.Rectangle{X: 150, Y: 100, Width: 50, Height: 100}, 0, rl.Color{R: 255, G: 128, B: 0, A: 255})
+	// rl.DrawTexturePro(rl.Rectangle{X: 0, Y: 50, Width: 100, Height: 50}, 0, rl.Color{R: 255, G: 0, B: 128, A: 255})
+	// rl.DrawTexturePro(rl.Rectangle{X: 150, Y: 100, Width: 50, Height: 100}, 0, rl.Color{R: 255, G: 128, B: 0, A: 255})
+	ctx.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 0, 50, 100, 50)
+	ctx.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 150, 100, 50, 100)
 
-	return rl.Next()
+	return ctx.Next()
 }
 
 //export add
