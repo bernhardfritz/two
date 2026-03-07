@@ -26,7 +26,7 @@ function app(canvas, renderer) {
       efs[targetPath] = goBytes;
       console.log('writeFile', targetPath, goBytes);
     },
-    'loadImage': function(fileNamePtr, fileNameLen, bytesPtr, bytesLen) {
+    'loadTexture': function(fileNamePtr, fileNameLen, bytesPtr, bytesLen) {
       const mem = new Uint8Array(wasm.exports.memory.buffer);
       const fileName = new TextDecoder().decode(mem.subarray(fileNamePtr, fileNamePtr + fileNameLen));
       const data = efs[fileName];

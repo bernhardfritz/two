@@ -13,29 +13,29 @@ type perInstanceData struct {
 }
 
 type context struct {
-	instances      []perInstanceData
-	maxImageWidth  int
-	maxImageHeight int
-	update         func(deltaTime float64)
+	instances        []perInstanceData
+	maxTextureWidth  int
+	maxTextureHeight int
+	update           func(deltaTime float64)
 }
 
 var ctx context
 
-type Image struct {
+type Texture struct {
 	ID     int
 	Width  int
 	Height int
 }
 
-func DrawImage2f(image Image, dx, dy float32) {
-	DrawImage8f(image, dx, dy, float32(image.Width), float32(image.Height), 0, 0, float32(image.Width), float32(image.Height))
+func DrawTexture2f(texture Texture, dx, dy float32) {
+	DrawTexture8f(texture, dx, dy, float32(texture.Width), float32(texture.Height), 0, 0, float32(texture.Width), float32(texture.Height))
 }
 
-func DrawImage4f(image Image, dx, dy, dWidth, dHeight float32) {
-	DrawImage8f(image, dx, dy, dWidth, dHeight, 0, 0, float32(image.Width), float32(image.Height))
+func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float32) {
+	DrawTexture8f(texture, dx, dy, dWidth, dHeight, 0, 0, float32(texture.Width), float32(texture.Height))
 }
 
-func DrawImage8f(image Image, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
+func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
 	instance := perInstanceData{}
 	{
 		var t1 mat4x4
@@ -50,11 +50,11 @@ func DrawImage8f(image Image, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight f
 		var identity mat4x4
 		mat4x4_identity(&identity)
 		var s mat4x4
-		mat4x4_scale_aniso(&s, identity, sWidth/float32(ctx.maxImageWidth), sHeight/float32(ctx.maxImageHeight), 1)
+		mat4x4_scale_aniso(&s, identity, sWidth/float32(ctx.maxTextureWidth), sHeight/float32(ctx.maxTextureHeight), 1)
 		var t mat4x4
-		mat4x4_translate(&t, sx/float32(ctx.maxImageWidth), sy/float32(ctx.maxImageHeight), 0)
+		mat4x4_translate(&t, sx/float32(ctx.maxTextureWidth), sy/float32(ctx.maxTextureHeight), 0)
 		mat4x4_mul(&instance.textureMatrix, t, s)
-		instance.textureMatrix[3][3] = float32(image.ID)
+		instance.textureMatrix[3][3] = float32(texture.ID)
 	}
 	ctx.instances = append(ctx.instances, instance)
 }
@@ -83,27 +83,27 @@ func AddFileSystem(efs fs.FS) {
 	}
 }
 
-//export loadImage
-func loadImage(fileName string, bytes []byte)
+//export loadTexture
+func loadTexture(fileName string, bytes []byte)
 
 func littleEndianToUint32(bytes []byte) uint32 {
 	return *(*uint32)(unsafe.Pointer(&bytes[0]))
 }
 
-func LoadImage(fileName string) Image {
+func LoadTexture(fileName string) Texture {
 	var bytes [12]byte
-	loadImage(fileName, bytes[:])
+	loadTexture(fileName, bytes[:])
 	id := int(littleEndianToUint32(bytes[0:4]))
 	width := int(littleEndianToUint32(bytes[4:8]))
 	height := int(littleEndianToUint32(bytes[8:12]))
-	if width > ctx.maxImageWidth {
-		ctx.maxImageWidth = width
+	if width > ctx.maxTextureWidth {
+		ctx.maxTextureWidth = width
 	}
-	if height > ctx.maxImageHeight {
-		ctx.maxImageHeight = height
+	if height > ctx.maxTextureHeight {
+		ctx.maxTextureHeight = height
 	}
 
-	return Image{
+	return Texture{
 		ID:     id,
 		Width:  width,
 		Height: height,

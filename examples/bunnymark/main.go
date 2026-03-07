@@ -14,14 +14,14 @@ func init() {
 }
 
 func main() {
-	bunny := TWO.LoadImage("resources/wabbit_alpha.png")
+	bunny := TWO.LoadTexture("resources/wabbit_alpha.png")
 	println("bunny", bunny.ID, bunny.Width, bunny.Height)
-	raybunny := TWO.LoadImage("resources/raybunny.png")
+	raybunny := TWO.LoadTexture("resources/raybunny.png")
 	println("raybunny", raybunny.ID, raybunny.Width, raybunny.Height)
 
 	update := func(deltaTime float64) {
-		TWO.DrawImage2f(bunny, 0, 0)
-		TWO.DrawImage2f(raybunny, 150, 100)
+		TWO.DrawTexture2f(bunny, 0, 0)
+		TWO.DrawTexture2f(raybunny, 150, 100)
 	}
 
 	TWO.SetMainLoop(update)
