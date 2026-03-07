@@ -26,7 +26,15 @@ type Image struct {
 	Height int
 }
 
-func DrawImage(image Image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight float32) {
+func DrawImage2f(image Image, dx, dy float32) {
+	DrawImage8f(image, dx, dy, float32(image.Width), float32(image.Height), 0, 0, float32(image.Width), float32(image.Height))
+}
+
+func DrawImage4f(image Image, dx, dy, dWidth, dHeight float32) {
+	DrawImage8f(image, dx, dy, dWidth, dHeight, 0, 0, float32(image.Width), float32(image.Height))
+}
+
+func DrawImage8f(image Image, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
 	instance := perInstanceData{}
 	{
 		var t1 mat4x4

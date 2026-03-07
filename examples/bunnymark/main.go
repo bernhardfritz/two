@@ -25,8 +25,8 @@ func main() {
 
 //export update
 func update(deltaTime float64) uint64 {
-	TWO.DrawImage(bunny, 0, 0, float32(bunny.Width), float32(bunny.Height), 0, 0, float32(bunny.Width)*2, float32(bunny.Height)*2)
-	TWO.DrawImage(raybunny, 0, 0, float32(raybunny.Width), float32(raybunny.Height), 150, 100, float32(raybunny.Width)*2, float32(raybunny.Height)*2)
+	TWO.DrawImage2f(bunny, 0, 0)
+	TWO.DrawImage2f(raybunny, 150, 100)
 
 	return TWO.Next()
 }
