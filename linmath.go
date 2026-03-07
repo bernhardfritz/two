@@ -1,4 +1,4 @@
-package lib
+package two
 
 type vec4 [4]float32
 

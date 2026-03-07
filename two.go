@@ -1,4 +1,4 @@
-package lib
+package two
 
 import (
 	"io"
