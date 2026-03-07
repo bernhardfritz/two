@@ -19,9 +19,6 @@ function app(canvas, renderer) {
   let maxBitmapHeight = 0;
   // This part goes after "const go = new Go();" declaration.
   go.importObject.env = {
-    'add': function(x, y) {
-      return x + y
-    },
     'writeFile': function(targetPathPtr, targetPathLen, goBytesPtr, goBytesLen) {
       const mem = new Uint8Array(wasm.exports.memory.buffer);
       const targetPath = new TextDecoder().decode(mem.subarray(targetPathPtr, targetPathPtr + targetPathLen));

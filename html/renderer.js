@@ -5,7 +5,6 @@ var vertexShaderSource = `#version 300 es
 in vec4 a_position;
 in mat4 a_model_matrix;
 in mat4 a_texture_matrix;
-// in float a_texture_index;
 in vec4 a_color;
 uniform mat4 u_projection;
 
@@ -44,9 +43,6 @@ out vec4 outColor;
 
 void main() {
   // Just set the output to a constant redish-purple
-  // outColor = vec4(1, 0, 0.5, 1);
-  // outColor = v_color;
-  // outColor = vec4(v_uv, 0, 1);
   outColor = texture(u_texture, vec3(v_uv, v_texture_index));
 }
 `;
@@ -180,25 +176,11 @@ function renderer(gl) {
   gl.enableVertexAttribArray(colorAttributeLocation);
   gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_color'));
   gl.vertexAttribDivisor(colorAttributeLocation, 1);
-  
-  // gl.enableVertexAttribArray(textureIndexAttributeLocation);
-  // gl.vertexAttribPointer(textureIndexAttributeLocation, 1, gl.FLOAT, false, perInstanceDataSize, 4 * 16);
-  // gl.vertexAttribDivisor(textureIndexAttributeLocation, 1);
-  
+   
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     
   return (instances) => {
-    // let byteOffset = instances.byteOffset;
-    // const modelMatrix1 = new Float32Array(instances.buffer, byteOffset, 4 * 4);
-    // const textureIndex1 = new Float32Array(instances.buffer, byteOffset += 4 * 4 * Float32Array.BYTES_PER_ELEMENT, 1);
-    // const modelMatrix2 = new Float32Array(instances.buffer, byteOffset += 1 * Float32Array.BYTES_PER_ELEMENT, 4 * 4);
-    // const textureIndex2 = new Float32Array(instances.buffer, byteOffset += 4 * 4 * Float32Array.BYTES_PER_ELEMENT, 1);
-    // console.log('modelMatrix1', modelMatrix1);
-    // console.log('textureIndex1', textureIndex1);
-    // console.log('modelMatrix2', modelMatrix2);
-    // console.log('textureIndex2', textureIndex2);
-
     webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
     // Tell WebGL how to convert from clip space to pixels
@@ -211,7 +193,6 @@ function renderer(gl) {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program); // TODO probably enough to call once instead of once per frame
     
-    // const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const projectionMatrix = m4.orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
     gl.uniformMatrix4fv(projectionUniformLocation, false,
         projectionMatrix);
