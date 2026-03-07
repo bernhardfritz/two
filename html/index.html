@@ -7,7 +7,6 @@
 <body>
   <div id="app"></div>
   <script src="wasm_exec.js"></script>
-  <script src="https://webgl2fundamentals.org/webgl/resources/webgl-utils.js"></script>
   <script src="https://webgl2fundamentals.org/webgl/resources/m4.js"></script>
   <script src="app.js"></script>
   <script src="renderer.js"></script>
@@ -23,7 +22,7 @@
       const worker = new Worker('worker.js');
       worker.postMessage({ type: 'canvas', canvas }, [canvas]);
       const observer = new ResizeObserver(() => {
-        worker.postMessage({ type: 'resize', clientWidth: canvasEl.clientWidth, clientHeight: canvasEl.clientHeight });
+        worker.postMessage({ type: 'resize', clientWidth: canvasEl.clientWidth, clientHeight: canvasEl.clientHeight, devicePixelRatio: window.devicePixelRatio });
       });
       observer.observe(canvasEl);
     } else {
