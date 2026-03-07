@@ -1,5 +1,4 @@
 importScripts('wasm_exec.js');
-importScripts('https://webgl2fundamentals.org/webgl/resources/m4.js');
 importScripts('app.js');
 importScripts('renderer.js');
 

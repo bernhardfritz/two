@@ -114,6 +114,29 @@ function resizeCanvasToDisplaySize(canvas, multiplier) {
   return false;
 }
 
+function orthographic(left, right, bottom, top, near, far, dst) {
+  dst = dst || new Float32Array(16);
+
+  dst[ 0] = 2 / (right - left);
+  dst[ 1] = 0;
+  dst[ 2] = 0;
+  dst[ 3] = 0;
+  dst[ 4] = 0;
+  dst[ 5] = 2 / (top - bottom);
+  dst[ 6] = 0;
+  dst[ 7] = 0;
+  dst[ 8] = 0;
+  dst[ 9] = 0;
+  dst[10] = 2 / (near - far);
+  dst[11] = 0;
+  dst[12] = (left + right) / (left - right);
+  dst[13] = (bottom + top) / (bottom - top);
+  dst[14] = (near + far) / (near - far);
+  dst[15] = 1;
+
+  return dst;
+}
+
 function renderer(gl) {
   // create GLSL shaders, upload the GLSL source, compile the shaders
   var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -129,7 +152,6 @@ function renderer(gl) {
   var colorAttributeLocation = gl.getAttribLocation(program, "a_color");
   var projectionUniformLocation = gl.getUniformLocation(program, "u_projection");
   var textureUniformLocation = gl.getUniformLocation(program, "u_texture");
-  // var textureIndexAttributeLocation = gl.getAttribLocation(program, "a_texture_index");
   
   // Create a vertex array object (attribute state)
   var vao = gl.createVertexArray();
@@ -162,7 +184,6 @@ function renderer(gl) {
   var offset = 0;        // start at the beginning of the buffer
   gl.vertexAttribPointer(
       positionAttributeLocation, size, type, normalize, stride, offset);
-  
 
   var instanceBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
@@ -205,7 +226,7 @@ function renderer(gl) {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program); // TODO probably enough to call once instead of once per frame
     
-    const projectionMatrix = m4.orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
+    const projectionMatrix = orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
     gl.uniformMatrix4fv(projectionUniformLocation, false,
         projectionMatrix);
     gl.uniform1i(textureUniformLocation, 0); // TODO shouldn't be hardcoded
