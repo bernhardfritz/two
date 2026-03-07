@@ -16,6 +16,7 @@ type context struct {
 	instances      []perInstanceData
 	maxImageWidth  int
 	maxImageHeight int
+	update         func(deltaTime float64)
 }
 
 var ctx context
@@ -56,13 +57,6 @@ func DrawImage8f(image Image, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight f
 		instance.textureMatrix[3][3] = float32(image.ID)
 	}
 	ctx.instances = append(ctx.instances, instance)
-}
-
-func Next() uint64 {
-	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
-	ctx.instances = ctx.instances[:0]
-
-	return ret
 }
 
 //export writeFile
@@ -114,4 +108,18 @@ func LoadImage(fileName string) Image {
 		Width:  width,
 		Height: height,
 	}
+}
+
+func SetMainLoop(update func(deltaTime float64)) {
+	ctx.update = update
+	select {}
+}
+
+//export update
+func update(deltaTime float64) uint64 {
+	ctx.update(deltaTime)
+	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
+	ctx.instances = ctx.instances[:0]
+
+	return ret
 }
