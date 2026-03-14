@@ -1,0 +1,22 @@
+{
+  "name": "@bernhardfritz/two",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "files": ["dist"],
+  "module": "./dist/two.js",
+  "exports": {
+    ".": {
+      "import": "./dist/two.js"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
+  }
+}
