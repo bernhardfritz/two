@@ -1,22 +1,35 @@
-import { game } from './game.ts';
-import { type AugmentedWebGL2RenderingContext } from './renderer.ts';
+import { game, type Context } from './game.ts';
 
-let baseURI: string;
-let gl: AugmentedWebGL2RenderingContext;
+const ctx = {} as Context;
 
 onmessage = (evt) => {
   switch (evt.data.type) {
     case 'baseURI':
-      baseURI = evt.data.baseURI;
+      ctx.baseURI = evt.data.baseURI;
       break;
     case 'canvas':
-      gl = evt.data.canvas.getContext('webgl2', { alpha: false })!;
-      game(gl, baseURI);
+      Object.assign(ctx, {
+        gl: evt.data.canvas.getContext('webgl2', { alpha: false })!,
+        mouseX: 0,        
+        mouseY: 0,
+        mouseButtons: 0,
+      })
+      game(ctx);
       break;
     case 'resize':
-      gl.canvas.clientWidth = evt.data.clientWidth;
-      gl.canvas.clientHeight = evt.data.clientHeight;
+      ctx.gl.canvas.clientWidth = evt.data.clientWidth;
+      ctx.gl.canvas.clientHeight = evt.data.clientHeight;
       globalThis.devicePixelRatio = evt.data.devicePixelRatio;
+      break;
+    case 'mousemove':
+      ctx.mouseX = evt.data.clientX;
+      ctx.mouseY = evt.data.clientY;
+      break;
+    case 'mousedown':
+      ctx.mouseButtons = evt.data.buttons;
+      break;
+    case 'mouseup':
+      ctx.mouseButtons = evt.data.buttons;
       break;
   }
 }

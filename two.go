@@ -16,7 +16,7 @@ type context struct {
 	instances        []perInstanceData
 	maxTextureWidth  int
 	maxTextureHeight int
-	update           func(deltaTime float64)
+	update           func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)
 }
 
 var ctx context
@@ -110,14 +110,14 @@ func LoadTexture(fileName string) Texture {
 	}
 }
 
-func SetMainLoop(update func(deltaTime float64)) {
+func SetMainLoop(update func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)) {
 	ctx.update = update
 	select {}
 }
 
 //export update
-func update(deltaTime float64) uint64 {
-	ctx.update(deltaTime)
+func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
+	ctx.update(deltaTime, int(width), int(height), int(mouseX), int(mouseY), int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]
 

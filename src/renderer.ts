@@ -79,12 +79,12 @@ function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fr
   return program;
 }
 
-const sizes = {
+export const sizes = {
   vec4: Float32Array.BYTES_PER_ELEMENT * 4,
   mat4: Float32Array.BYTES_PER_ELEMENT * 16,
 };
 
-function sizeof(attributes: Map<string, keyof typeof sizes>) {
+export function sizeof(attributes: Map<string, keyof typeof sizes>) {
   let size = 0;
   for (const [_key, value] of attributes) {
     size += sizes[value];     
@@ -142,7 +142,7 @@ function orthographic(left: number, right: number, bottom: number, top: number, 
 
 export type AugmentedWebGL2RenderingContext = WebGL2RenderingContext & { canvas: (HTMLCanvasElement | OffscreenCanvas) & { clientWidth: number, clientHeight: number }};
 
-export function renderer(gl: AugmentedWebGL2RenderingContext) {
+export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<string, keyof typeof sizes>) {
   // create GLSL shaders, upload the GLSL source, compile the shaders
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
   const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -194,11 +194,6 @@ export function renderer(gl: AugmentedWebGL2RenderingContext) {
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
 
-  const attributes = new Map<string, keyof typeof sizes>([
-    ['a_model_matrix', 'mat4'],
-    ['a_texture_matrix', 'mat4'],
-    ['a_color', 'vec4'],
-  ]);
   for (let i = 0; i < 4; i++) {
     const loc = modelMatrixAttributeLocation + i;
     gl.enableVertexAttribArray(loc);
@@ -218,7 +213,7 @@ export function renderer(gl: AugmentedWebGL2RenderingContext) {
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     
-  return (instances: Uint8Array<ArrayBuffer>) => {
+  return (instances: Float32Array<ArrayBuffer>) => {
     resizeCanvasToDisplaySize(gl.canvas, globalThis.devicePixelRatio);
 
     // Tell WebGL how to convert from clip space to pixels
@@ -240,16 +235,14 @@ export function renderer(gl: AugmentedWebGL2RenderingContext) {
     gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
     
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
-    const tmp = new Float32Array(instances.buffer, instances.byteOffset, (sizeof(attributes) / 4) * 2); // TODO number 2 shouldn't be hardcoded, it represents the number of instances
-    // console.log(tmp);
-    gl.bufferData(gl.ARRAY_BUFFER, tmp, gl.DYNAMIC_DRAW); // Float32Array conversion should happen outside
+    gl.bufferData(gl.ARRAY_BUFFER, instances, gl.DYNAMIC_DRAW);
     // gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances); // TODO
 
     // draw
     const primitiveType = gl.TRIANGLE_STRIP;
     const offset = 0;
     const count = 4;
-    const inst = 2;
+    const inst = instances.length;
     gl.drawArraysInstanced(primitiveType, offset, count, inst); // todo use mat3x3 instead (apparently same performance but lower memory)
   };
 }

@@ -1,12 +1,21 @@
-import { renderer, type AugmentedWebGL2RenderingContext } from './renderer.ts';
+import { renderer, sizeof, sizes, type AugmentedWebGL2RenderingContext } from './renderer.ts';
 
 const init: typeof WebAssembly.instantiateStreaming = WebAssembly.instantiateStreaming || (async (resp, importObject) => {
   const source = await (await resp).arrayBuffer();
   return await WebAssembly.instantiate(source, importObject);
 });
 
-export async function game(gl: AugmentedWebGL2RenderingContext, baseURI: string) {
-  await import(new URL(`${import.meta.env.BASE_URL}wasm_exec.js`, baseURI).href);
+export interface Context {
+  gl: AugmentedWebGL2RenderingContext;
+  baseURI: string;
+  mouseX: number;
+  mouseY: number;
+  mouseButtons: number;
+}
+
+export async function game(ctx: Context) {
+  const gl = ctx.gl;
+  await import(new URL(`${import.meta.env.BASE_URL}wasm_exec.js`, ctx.baseURI).href);
   //@ts-ignore
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm: WebAssembly.Instance;
@@ -21,7 +30,6 @@ export async function game(gl: AugmentedWebGL2RenderingContext, baseURI: string)
       const targetPath = new TextDecoder().decode(mem.subarray(targetPathPtr, targetPathPtr + targetPathLen));
       const goBytes = mem.subarray(goBytesPtr, goBytesPtr + goBytesLen);
       efs[targetPath] = goBytes;
-      console.log('writeFile', targetPath, goBytes);
     },
     'loadTexture': function(fileNamePtr: number, fileNameLen: number, bytesPtr: number, bytesLen: number) {
       const mem = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer);
@@ -45,7 +53,7 @@ export async function game(gl: AugmentedWebGL2RenderingContext, baseURI: string)
     // ... other functions
   };
   
-  init(fetch(new URL(`${import.meta.env.BASE_URL}main.wasm`, baseURI)), go.importObject).then(async function (obj) {
+  init(fetch(new URL(`${import.meta.env.BASE_URL}main.wasm`, ctx.baseURI)), go.importObject).then(async function (obj) {
     wasm = obj.instance;
     go.run(wasm);
     const texture = gl.createTexture();
@@ -64,13 +72,19 @@ export async function game(gl: AugmentedWebGL2RenderingContext, baseURI: string)
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     await Promise.all(bitmapPromises);
 
-    const render = renderer(gl);
+    const attributes = new Map<string, keyof typeof sizes>([
+      ['a_model_matrix', 'mat4'],
+      ['a_texture_matrix', 'mat4'],
+      ['a_color', 'vec4'],
+    ]);
+    const render = renderer(gl, attributes);
     let previousTime = 0;
     const frameRequestCallback: FrameRequestCallback = (time) => {
-      const slice = (wasm.exports.update as (deltaTime: number) => bigint)(time - previousTime);
+      const slice = (wasm.exports.update as (deltaTime: number, width: number, height: number, mouseX: number, mouseY: number, mouseButtons: number) => bigint)(time - previousTime, gl.canvas.clientWidth, gl.canvas.clientHeight, ctx.mouseX, ctx.mouseY, ctx.mouseButtons);
       const ptr = Number(slice >> 32n);
       const len = Number(slice & 0xffffffffn);
-      const instances = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer, ptr, len);
+      const bytes = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer, ptr, len);
+      const instances = new Float32Array(bytes.buffer, bytes.byteOffset, (sizeof(attributes) / 4) * len);
       render(instances);
       previousTime = time;
       requestAnimationFrame(frameRequestCallback);
