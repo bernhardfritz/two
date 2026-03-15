@@ -5,11 +5,11 @@ const vertexShaderSource = `#version 300 es
 in vec4 a_position;
 in mat4 a_model_matrix;
 in mat4 a_texture_matrix;
-in vec4 a_color;
+in vec4 a_tint_color;
 uniform mat4 u_projection;
 
 out float v_texture_index;
-out vec4 v_color;
+out vec4 v_tint_color;
 out vec2 v_uv;
 
 // all shaders have a main function
@@ -20,7 +20,7 @@ void main() {
   gl_Position = u_projection * a_model_matrix * a_position;
   
   v_texture_index = a_texture_matrix[3][3];
-  v_color = a_color;
+  v_tint_color = a_tint_color;
   v_uv = vec2(a_texture_matrix * a_position);
 }
 `;
@@ -33,7 +33,7 @@ precision highp float;
 precision lowp sampler2DArray;
 
 in float v_texture_index;
-in vec4 v_color;
+in vec4 v_tint_color;
 in vec2 v_uv;
 
 uniform sampler2DArray u_texture;
@@ -43,7 +43,7 @@ out vec4 outColor;
 
 void main() {
   // Just set the output to a constant redish-purple
-  outColor = texture(u_texture, vec3(v_uv, v_texture_index));
+  outColor = v_tint_color * texture(u_texture, vec3(v_uv, v_texture_index));
 }
 `;
 
@@ -154,7 +154,7 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
   const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
   const modelMatrixAttributeLocation = gl.getAttribLocation(program, "a_model_matrix");
   const textureMatrixAttributeLocation = gl.getAttribLocation(program, "a_texture_matrix");
-  const colorAttributeLocation = gl.getAttribLocation(program, "a_color");
+  const tintColorAttributeLocation = gl.getAttribLocation(program, "a_tint_color");
   const projectionUniformLocation = gl.getUniformLocation(program, "u_projection");
   const textureUniformLocation = gl.getUniformLocation(program, "u_texture");
   
@@ -206,9 +206,9 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
     gl.vertexAttribPointer(loc, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_texture_matrix') + i * sizes.vec4);
     gl.vertexAttribDivisor(loc, 1);
   }
-  gl.enableVertexAttribArray(colorAttributeLocation);
-  gl.vertexAttribPointer(colorAttributeLocation, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_color'));
-  gl.vertexAttribDivisor(colorAttributeLocation, 1);
+  gl.enableVertexAttribArray(tintColorAttributeLocation);
+  gl.vertexAttribPointer(tintColorAttributeLocation, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_tint_color'));
+  gl.vertexAttribDivisor(tintColorAttributeLocation, 1);
    
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -220,8 +220,8 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // Clear the canvas
-    gl.clearColor(1, 1, 1, 1); // TODO make background color configurable
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // gl.clearColor(0, 0, 0, 0);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program); // TODO probably enough to call once instead of once per frame

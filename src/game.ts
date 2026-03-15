@@ -20,9 +20,9 @@ export async function game(ctx: Context) {
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm: WebAssembly.Instance;
   const efs: Record<string, Uint8Array<ArrayBuffer>> = {};
-  let bitmapPromises: Promise<ImageBitmap>[] = [];
-  let maxBitmapWidth = 0;
-  let maxBitmapHeight = 0;
+  let bitmapPromises: Promise<ImageBitmap>[] = [createImageBitmap(new ImageData(new Uint8ClampedArray([255, 255, 255, 255]), 1, 1))];
+  let maxBitmapWidth = 1;
+  let maxBitmapHeight = 1;
   // This part goes after "const go = new Go();" declaration.
   go.importObject.env = {
     'writeFile': function(targetPathPtr: number, targetPathLen: number, goBytesPtr: number, goBytesLen: number) {
@@ -38,7 +38,7 @@ export async function game(ctx: Context) {
       const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
       const width = dataView.getUint32(16); // PNG
       const height = dataView.getUint32(20);
-      const id = bitmapPromises.length;
+      const id = bitmapPromises.length - 1; // subtract 1 because first bitmap is 1x1 white pixel
       const blob = new Blob([data], { type: 'image/png' });
       const bitmap = createImageBitmap(blob);
       bitmapPromises.push(bitmap);
@@ -62,6 +62,8 @@ export async function game(ctx: Context) {
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     // TODO when loading textures, the clamping setting could also be relevant. see https://github.com/gfxfundamentals/webgl-fundamentals/discussions/396
+    // gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    // gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, maxBitmapWidth, maxBitmapHeight, bitmapPromises.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     bitmapPromises = bitmapPromises.map((bitmapPromise, index) => bitmapPromise.then((bitmap) => {
       gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, index, bitmap.width, bitmap.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
@@ -75,7 +77,7 @@ export async function game(ctx: Context) {
     const attributes = new Map<string, keyof typeof sizes>([
       ['a_model_matrix', 'mat4'],
       ['a_texture_matrix', 'mat4'],
-      ['a_color', 'vec4'],
+      ['a_tint_color', 'vec4'],
     ]);
     const render = renderer(gl, attributes);
     let previousTime = 0;

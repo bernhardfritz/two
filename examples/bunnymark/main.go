@@ -55,6 +55,7 @@ func main() {
 			}
 		}
 
+		two.ClearBackground(255, 255, 255, 255)
 		for _, b := range bunnies {
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}

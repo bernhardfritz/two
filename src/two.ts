@@ -2,7 +2,7 @@ import type { Context } from './game.ts';
 import type { AugmentedWebGL2RenderingContext } from './renderer.ts';
 import MyWorker from './worker.ts?worker&inline';
 
-export function two(canvas: HTMLCanvasElement) {
+export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes) {
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
@@ -41,14 +41,18 @@ export function two(canvas: HTMLCanvasElement) {
     const offscreenCanvas = canvas.transferControlToOffscreen();
     const worker = new MyWorker();
     worker.postMessage({ type: 'baseURI', baseURI: document.baseURI });
-    worker.postMessage({ type: 'canvas', canvas: offscreenCanvas }, [offscreenCanvas]);
+    worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options }, [offscreenCanvas]);
     const observer = new ResizeObserver(() => {
       worker.postMessage({ type: 'resize', clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight, devicePixelRatio: window.devicePixelRatio });
     });
     observer.observe(canvas);
   } else {
     const ctx: Context = {
-      gl: canvas.getContext('webgl2')! as AugmentedWebGL2RenderingContext,
+      gl: canvas.getContext('webgl2', {
+        alpha: false,
+        depth: false,
+        ...options,
+      })! as AugmentedWebGL2RenderingContext,
       baseURI: document.baseURI,
       mouseX: 0,
       mouseY: 0,

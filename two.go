@@ -9,7 +9,7 @@ import (
 type perInstanceData struct {
 	modelMatrix   mat4x4
 	textureMatrix mat4x4
-	color         vec4
+	tintColor     vec4
 }
 
 type context struct {
@@ -17,6 +17,8 @@ type context struct {
 	maxTextureWidth  int
 	maxTextureHeight int
 	update           func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)
+	width            int
+	height           int
 }
 
 var ctx context
@@ -36,14 +38,16 @@ func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float32) {
 }
 
 func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
-	instance := perInstanceData{}
+	instance := perInstanceData{
+		tintColor: vec4{1, 1, 1, 1},
+	}
 	{
 		var t1 mat4x4
 		mat4x4_translate(&t1, -0.5, -0.5, 0) // -0.5 to compensate because quad is offset for the purpose of dual usage as uv coordinates
 		var s mat4x4
 		mat4x4_scale_aniso(&s, t1, dWidth, dHeight, 1)
 		var t2 mat4x4
-		mat4x4_translate(&t2, dx, dy, 0)
+		mat4x4_translate(&t2, 0.5+dx, 0.5+dy, 0)
 		mat4x4_mul(&instance.modelMatrix, t2, s)
 	}
 	{
@@ -54,9 +58,14 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 		var t mat4x4
 		mat4x4_translate(&t, sx/float32(ctx.maxTextureWidth), sy/float32(ctx.maxTextureHeight), 0)
 		mat4x4_mul(&instance.textureMatrix, t, s)
-		instance.textureMatrix[3][3] = float32(texture.ID)
+		instance.textureMatrix[3][3] = float32(texture.ID + 1) // add 1 because first texture is 1x1 white pixel
 	}
 	ctx.instances = append(ctx.instances, instance)
+}
+
+func ClearBackground(r, g, b, a uint8) {
+	DrawTexture4f(Texture{ID: -1, Width: 1, Height: 1}, 0, 0, float32(ctx.width), float32(ctx.height))
+	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 //export writeFile
@@ -117,6 +126,8 @@ func SetMainLoop(update func(deltaTime float64, width, height, mouseX, mouseY, m
 
 //export update
 func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
+	ctx.width = int(width)
+	ctx.height = int(height)
 	ctx.update(deltaTime, int(width), int(height), int(mouseX), int(mouseY), int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]

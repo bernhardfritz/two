@@ -9,7 +9,11 @@ onmessage = (evt) => {
       break;
     case 'canvas':
       Object.assign(ctx, {
-        gl: evt.data.canvas.getContext('webgl2', { alpha: false })!,
+        gl: evt.data.canvas.getContext('webgl2', {
+          alpha: false,
+          depth: false,
+          ...evt.data.options
+        })!,
         mouseX: 0,        
         mouseY: 0,
         mouseButtons: 0,
