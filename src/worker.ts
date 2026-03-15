@@ -21,14 +21,18 @@ onmessage = (evt) => {
       ctx.gl.canvas.clientHeight = evt.data.clientHeight;
       globalThis.devicePixelRatio = evt.data.devicePixelRatio;
       break;
+    case 'mousedown':
+      ctx.mouseX = evt.data.clientX;
+      ctx.mouseY = evt.data.clientY;
+      ctx.mouseButtons = evt.data.buttons;
+      break;
     case 'mousemove':
       ctx.mouseX = evt.data.clientX;
       ctx.mouseY = evt.data.clientY;
       break;
-    case 'mousedown':
-      ctx.mouseButtons = evt.data.buttons;
-      break;
     case 'mouseup':
+      ctx.mouseX = evt.data.clientX;
+      ctx.mouseY = evt.data.clientY;
       ctx.mouseButtons = evt.data.buttons;
       break;
   }

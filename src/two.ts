@@ -8,15 +8,35 @@ export function two(canvas: HTMLCanvasElement) {
   canvas.style.display = 'block';
 
   if ('OffscreenCanvas' in window && 'Worker' in window && 'ResizeObserver' in window) {
+    canvas.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      worker.postMessage({ type: 'mousedown', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
+    });
     canvas.addEventListener('mousemove', (ev) => {
+      ev.preventDefault();
       const rect = canvas.getBoundingClientRect();
       worker.postMessage({ type: 'mousemove', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top });
     });
-    canvas.addEventListener('mousedown', (ev) => {
-      worker.postMessage({ type: 'mousedown', buttons: ev.buttons });
-    });
     canvas.addEventListener('mouseup', (ev) => {
-      worker.postMessage({ type: 'mouseup', buttons: ev.buttons });
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      worker.postMessage({ type: 'mouseup', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
+    });
+    canvas.addEventListener('touchstart', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      worker.postMessage({ type: 'mousedown', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 1 });
+    });
+    canvas.addEventListener('touchmove', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      worker.postMessage({ type: 'mousemove', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top });
+    });
+    canvas.addEventListener('touchend', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      worker.postMessage({ type: 'mouseup', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 0 });
     });
     const offscreenCanvas = canvas.transferControlToOffscreen();
     const worker = new MyWorker();
@@ -34,16 +54,45 @@ export function two(canvas: HTMLCanvasElement) {
       mouseY: 0,
       mouseButtons: 0,
     };
+    canvas.addEventListener('mousedown', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      ctx.mouseX = ev.clientX - rect.left;
+      ctx.mouseY = ev.clientY - rect.top;
+      ctx.mouseButtons = ev.buttons;
+    });
     canvas.addEventListener('mousemove', (ev) => {
+      ev.preventDefault();
       const rect = canvas.getBoundingClientRect();
       ctx.mouseX = ev.clientX - rect.left;
       ctx.mouseY = ev.clientY - rect.top;
     });
-    canvas.addEventListener('mousedown', (ev) => {
+    canvas.addEventListener('mouseup', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      ctx.mouseX = ev.clientX - rect.left;
+      ctx.mouseY = ev.clientY - rect.top;
       ctx.mouseButtons = ev.buttons;
     });
-    canvas.addEventListener('mouseup', (ev) => {
-      ctx.mouseButtons = ev.buttons;
+    canvas.addEventListener('touchstart', (ev) => {
+      ev.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
+      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
+      ctx.mouseButtons = 1;
+    });
+    canvas.addEventListener('touchmove', (ev) => {
+      ev.preventDefault();      
+      const rect = canvas.getBoundingClientRect();
+      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
+      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
+    });
+    canvas.addEventListener('touchend', (ev) => {
+      ev.preventDefault();      
+      const rect = canvas.getBoundingClientRect();
+      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
+      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
+      ctx.mouseButtons = 0;
     });
     import('./game.ts').then(({ game }) => {
       game(ctx);

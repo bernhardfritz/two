@@ -69,8 +69,8 @@ export async function game(ctx: Context) {
 
       return bitmap;
     }));
-    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     await Promise.all(bitmapPromises);
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
 
     const attributes = new Map<string, keyof typeof sizes>([
       ['a_model_matrix', 'mat4'],
