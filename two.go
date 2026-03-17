@@ -19,6 +19,7 @@ type context struct {
 	update           func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)
 	width            int
 	height           int
+	tintColor        vec4
 }
 
 var ctx context
@@ -39,7 +40,7 @@ func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float32) {
 
 func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
 	instance := perInstanceData{
-		tintColor: vec4{1, 1, 1, 1},
+		tintColor: ctx.tintColor,
 	}
 	{
 		var t1 mat4x4
@@ -66,6 +67,10 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 func ClearBackground(r, g, b, a uint8) {
 	DrawTexture4f(Texture{ID: -1, Width: 1, Height: 1}, 0, 0, float32(ctx.width), float32(ctx.height))
 	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+}
+
+func SetTintColor(r, g, b, a uint8) {
+	ctx.tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 //export writeFile
@@ -131,6 +136,7 @@ func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint
 	ctx.update(deltaTime, int(width), int(height), int(mouseX), int(mouseY), int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]
+	ctx.tintColor = vec4{1, 1, 1, 1}
 
 	return ret
 }

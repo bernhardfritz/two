@@ -11,9 +11,14 @@ type Vector2 struct {
 	X, Y float32
 }
 
+type Color struct {
+	R, G, B, A uint8
+}
+
 type Bunny struct {
 	Position Vector2
 	Speed    Vector2
+	Color    Color
 }
 
 //go:embed resources/*
@@ -34,8 +39,12 @@ func main() {
 				b := &Bunny{}
 				b.Position.X = float32(mouseX)
 				b.Position.Y = float32(mouseY)
-				b.Speed.X = randomFloat(-250, 250) / 60
-				b.Speed.Y = randomFloat(-250, 250) / 60
+				b.Speed.X = randomFloat32(-250, 250) / 60
+				b.Speed.Y = randomFloat32(-250, 250) / 60
+				b.Color.R = uint8(randomFloat32(50, 240))
+				b.Color.G = uint8(randomFloat32(80, 240))
+				b.Color.B = uint8(randomFloat32(100, 240))
+				b.Color.A = 255
 
 				bunnies = append(bunnies, b)
 			}
@@ -57,6 +66,7 @@ func main() {
 
 		two.ClearBackground(255, 255, 255, 255)
 		for _, b := range bunnies {
+			two.SetTintColor(b.Color.R, b.Color.G, b.Color.B, b.Color.A)
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}
 	}
@@ -64,6 +74,6 @@ func main() {
 	two.SetMainLoop(update)
 }
 
-func randomFloat(inclusive, exclusive float32) float32 {
+func randomFloat32(inclusive, exclusive float32) float32 {
 	return inclusive + (exclusive-inclusive)*rand.Float32()
 }
