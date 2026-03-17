@@ -15,7 +15,7 @@ export interface Context {
 
 export async function game(ctx: Context) {
   const gl = ctx.gl;
-  await import(new URL(`${import.meta.env.BASE_URL}wasm_exec.js`, ctx.baseURI).href);
+  await import(new URL(`${ctx.baseURI}wasm_exec.js`).href);
   //@ts-ignore
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm: WebAssembly.Instance;
@@ -53,7 +53,7 @@ export async function game(ctx: Context) {
     // ... other functions
   };
   
-  init(fetch(new URL(`${import.meta.env.BASE_URL}main.wasm`, ctx.baseURI)), go.importObject).then(async function (obj) {
+  init(fetch(new URL(`${ctx.baseURI}main.wasm`)), go.importObject).then(async function (obj) {
     wasm = obj.instance;
     go.run(wasm);
     const texture = gl.createTexture();
