@@ -29,8 +29,12 @@ const fragmentShaderSource = `#version 300 es
 
 // fragment shaders don't have a default precision so we need
 // to pick one. highp is a good default. It means "high precision"
-precision highp float;
-precision lowp sampler2DArray;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+  precision highp float;
+#else
+  precision mediump float;
+#endif
+precision mediump sampler2DArray;
 
 in float v_texture_index;
 in vec4 v_tint_color;
@@ -209,6 +213,9 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
   gl.enableVertexAttribArray(tintColorAttributeLocation);
   gl.vertexAttribPointer(tintColorAttributeLocation, 4, gl.FLOAT, false, sizeof(attributes), offsetof(attributes, 'a_tint_color'));
   gl.vertexAttribDivisor(tintColorAttributeLocation, 1);
+  
+  gl.bindVertexArray(null);
+  gl.deleteBuffer(positionBuffer);
    
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -235,14 +242,18 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
     gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
     
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
-    gl.bufferData(gl.ARRAY_BUFFER, instances, gl.DYNAMIC_DRAW);
-    // gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances); // TODO
+    const instanceBufferSize = gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE);
+    if (instanceBufferSize != instances.byteLength) {
+      gl.bufferData(gl.ARRAY_BUFFER, instances, gl.DYNAMIC_DRAW);
+    } else {
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances);
+    }
 
     // draw
     const primitiveType = gl.TRIANGLE_STRIP;
     const offset = 0;
     const count = 4;
-    const inst = instances.length;
+    const inst = instances.byteLength / sizeof(attributes);
     gl.drawArraysInstanced(primitiveType, offset, count, inst); // todo use mat3x3 instead (apparently same performance but lower memory)
   };
 }

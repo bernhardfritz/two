@@ -71,7 +71,7 @@ func main() {
 		}
 	}
 
-	two.SetMainLoop(update)
+	two.SetGameLoop(update)
 }
 
 func randomFloat32(inclusive, exclusive float32) float32 {
