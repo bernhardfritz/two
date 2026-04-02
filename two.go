@@ -133,6 +133,32 @@ func LoadTexture(fileName string) Texture {
 	}
 }
 
+type Font struct {
+	texture        Texture
+	size           int
+	monospaceWidth float32
+}
+
+// LoadFont - Load font from a font atlas file into GPU memory (VRAM)
+// see https://bernhardfritz.github.io/monospace-font-atlas-generator/
+func LoadFont(fileName string) Font {
+	// TODO accept CSS font string instead of file path to font atlas
+	texture := LoadTexture(fileName)
+
+	return Font{
+		texture:        texture,
+		size:           (texture.Height - 7) / 6,
+		monospaceWidth: float32(texture.Width-17) / 16,
+	}
+}
+
+func DrawText(font Font, text string, x, y float32, size int) {
+	scale := float32(size) / float32(font.size)
+	for pos, char := range text {
+		DrawTexture8f(font.texture, x+scale*float32(pos)*font.monospaceWidth, y, scale*font.monospaceWidth, float32(size), 1+float32((char-' ')%16)*(font.monospaceWidth+1), 1+float32((char-' ')/16)*float32(font.size+1), font.monospaceWidth, float32(font.size))
+	}
+}
+
 // Sets the function to call when it's time to update your game for the next repaint
 func SetGameLoop(update func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)) {
 	ctx.update = update

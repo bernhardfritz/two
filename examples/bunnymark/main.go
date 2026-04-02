@@ -30,6 +30,7 @@ func init() {
 
 func main() {
 	texture := two.LoadTexture("resources/wabbit_alpha.png")
+	font := two.LoadFont("resources/32px monospace.png")
 	bunnies := make([]*Bunny, 0)
 
 	update := func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int) {
@@ -65,6 +66,8 @@ func main() {
 		}
 
 		two.ClearBackground(255, 255, 255, 255)
+		two.SetTintColor(0, 0, 0, 255)
+		two.DrawText(font, "Hello world!", 100, 100, 32)
 		for _, b := range bunnies {
 			two.SetTintColor(b.Color.R, b.Color.G, b.Color.B, b.Color.A)
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
