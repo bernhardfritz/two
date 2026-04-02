@@ -68,9 +68,14 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 	ctx.instances = append(ctx.instances, instance)
 }
 
+// Draws a color-filled rectangle
+func DrawRectangle(x, y, width, height float32) {
+	DrawTexture4f(Texture{id: -1, Width: 1, Height: 1}, x, y, width, height)
+}
+
 // Clears the background with color specified by red, green, blue and alpha channel values between 0 and 255.
 func ClearBackground(r, g, b, a uint8) {
-	DrawTexture4f(Texture{id: -1, Width: 1, Height: 1}, 0, 0, float32(ctx.width), float32(ctx.height))
+	DrawRectangle(0, 0, float32(ctx.width), float32(ctx.height))
 	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
@@ -139,7 +144,7 @@ type Font struct {
 	monospaceWidth float32
 }
 
-// LoadFont - Load font from a font atlas file into GPU memory (VRAM)
+// LoadFont - Load monospaced font from a font atlas file into GPU memory (VRAM)
 // see https://bernhardfritz.github.io/monospace-font-atlas-generator/
 func LoadFont(fileName string) Font {
 	// TODO accept CSS font string instead of file path to font atlas
@@ -152,6 +157,7 @@ func LoadFont(fileName string) Font {
 	}
 }
 
+// Draws color-filled monospaced text
 func DrawText(font Font, text string, x, y float32, size int) {
 	scale := float32(size) / float32(font.size)
 	for pos, char := range text {

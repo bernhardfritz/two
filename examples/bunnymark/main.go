@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"math/rand"
 
 	"github.com/bernhardfritz/two"
@@ -60,18 +61,20 @@ func main() {
 				b.Speed.X *= -1
 			}
 
-			if ((b.Position.Y + float32(texture.Height/2)) > float32(height)) || ((b.Position.Y + float32(texture.Height/2)) < 0) {
+			if ((b.Position.Y + float32(texture.Height/2)) > float32(height)) || ((b.Position.Y + float32(texture.Height/2-40)) < 0) {
 				b.Speed.Y *= -1
 			}
 		}
 
 		two.ClearBackground(255, 255, 255, 255)
-		two.SetTintColor(0, 0, 0, 255)
-		two.DrawText(font, "Hello world!", 100, 100, 32)
 		for _, b := range bunnies {
 			two.SetTintColor(b.Color.R, b.Color.G, b.Color.B, b.Color.A)
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}
+		two.SetTintColor(0, 0, 0, 255)
+		two.DrawRectangle(0, 0, float32(width), 40)
+		two.SetTintColor(0, 255, 0, 255)
+		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
 	}
 
 	two.SetGameLoop(update)
