@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"math"
 	"math/rand"
 
 	"github.com/bernhardfritz/two"
@@ -75,6 +76,7 @@ func main() {
 		two.DrawRectangle(0, 0, float32(width), 40)
 		two.SetTintColor(0, 255, 0, 255)
 		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
+		DrawFPS(font, deltaTime, 10, 10, 20)
 	}
 
 	two.SetGameLoop(update)
@@ -82,4 +84,46 @@ func main() {
 
 func randomFloat32(inclusive, exclusive float32) float32 {
 	return inclusive + (exclusive-inclusive)*rand.Float32()
+}
+
+const FPS_CAPTURE_FRAMES_COUNT = 30 // 30 captures
+var index int
+var history [FPS_CAPTURE_FRAMES_COUNT]float64
+var sum float64
+
+func GetFPS(deltaTime float64) int {
+	if deltaTime <= 0 {
+		return 0
+	}
+
+	// 1. Convert ms to seconds
+	seconds := deltaTime / 1000.0
+
+	// 2. Update the rolling sum by removing the oldest value and adding the new one
+	sum -= history[index]
+	history[index] = seconds
+	sum += seconds
+
+	// 3. Move the pointer
+	index = (index + 1) % FPS_CAPTURE_FRAMES_COUNT
+
+	// 4. Avoid division by zero
+	if sum <= 0 {
+		return 0
+	}
+
+	// 5. FPS = Frames / Total Seconds
+	return int(math.Round(float64(FPS_CAPTURE_FRAMES_COUNT) / sum))
+}
+
+func DrawFPS(font two.Font, deltaTime float64, x, y float32, size int) {
+	fps := GetFPS(deltaTime)
+	if 15 <= fps && fps < 30 {
+		two.SetTintColor(255, 161, 0, 255)
+	} else if fps < 15 {
+		two.SetTintColor(230, 41, 55, 255)
+	} else {
+		two.SetTintColor(0, 158, 47, 255)
+	}
+	two.DrawText(font, fmt.Sprintf("%d FPS", fps), x, y, size)
 }
