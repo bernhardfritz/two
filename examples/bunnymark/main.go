@@ -9,6 +9,8 @@ import (
 	"github.com/bernhardfritz/two"
 )
 
+const maxBatchElements = 8192
+
 type Vector2 struct {
 	X, Y float32
 }
@@ -74,8 +76,10 @@ func main() {
 		}
 		two.SetTintColor(0, 0, 0, 255)
 		two.DrawRectangle(0, 0, float32(width), 40)
-		two.SetTintColor(0, 255, 0, 255)
+		two.SetTintColor(0, 228, 48, 255)
 		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
+		two.SetTintColor(190, 33, 55, 255)
+		two.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10, 20)
 		DrawFPS(font, deltaTime, 10, 10, 20)
 	}
 

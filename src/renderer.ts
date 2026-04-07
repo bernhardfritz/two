@@ -146,6 +146,8 @@ function orthographic(left: number, right: number, bottom: number, top: number, 
 
 export type AugmentedWebGL2RenderingContext = WebGL2RenderingContext & { canvas: (HTMLCanvasElement | OffscreenCanvas) & { clientWidth: number, clientHeight: number }};
 
+const DEFAULT_BATCH_BUFFER_ELEMENTS = 8192;
+
 export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<string, keyof typeof sizes>) {
   // create GLSL shaders, upload the GLSL source, compile the shaders
   const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -196,7 +198,7 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
 
   const instanceBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, DEFAULT_BATCH_BUFFER_ELEMENTS * sizeof(attributes), gl.DYNAMIC_DRAW);
 
   for (let i = 0; i < 4; i++) {
     const loc = modelMatrixAttributeLocation + i;
@@ -242,18 +244,16 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
     gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
     
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
-    const instanceBufferSize = gl.getBufferParameter(gl.ARRAY_BUFFER, gl.BUFFER_SIZE);
-    if (instanceBufferSize != instances.byteLength) {
-      gl.bufferData(gl.ARRAY_BUFFER, instances, gl.DYNAMIC_DRAW);
-    } else {
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances);
+    const instanceCount = instances.byteLength / sizeof(attributes);
+    for (let i = 0; i < instanceCount; i += DEFAULT_BATCH_BUFFER_ELEMENTS) {
+      const batchElements = Math.min(instanceCount - i, DEFAULT_BATCH_BUFFER_ELEMENTS);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances, i * sizeof(attributes) / Float32Array.BYTES_PER_ELEMENT, batchElements * sizeof(attributes) / Float32Array.BYTES_PER_ELEMENT);
+      
+      // draw
+      const primitiveType = gl.TRIANGLE_STRIP;
+      const offset = 0;
+      const count = 4;
+      gl.drawArraysInstanced(primitiveType, offset, count, batchElements); // todo use mat3x3 instead (apparently same performance but lower memory)
     }
-
-    // draw
-    const primitiveType = gl.TRIANGLE_STRIP;
-    const offset = 0;
-    const count = 4;
-    const inst = instances.byteLength / sizeof(attributes);
-    gl.drawArraysInstanced(primitiveType, offset, count, inst); // todo use mat3x3 instead (apparently same performance but lower memory)
   };
 }
