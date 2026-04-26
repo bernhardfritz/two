@@ -2,42 +2,69 @@ import type { Context } from './game.ts';
 import type { AugmentedWebGL2RenderingContext } from './renderer.ts';
 import MyWorker from './worker.ts?worker&inline';
 
+function withMiddleware<T, U>(middleware: (t: T, next: (u: U) => void) => void): (next: (u: U) => void) => (t: T) => void {
+  return (next) => {
+    return (t) => {      
+      middleware(t, next);
+    }
+  }
+}
+
 export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes) {
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
+  
+  const createMouseDownHandler = withMiddleware<MouseEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
+  });
+  const createMouseMoveHandler = withMiddleware<MouseEvent, { clientX: number, clientY: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top });
+  });
+  const createMouseUpHandler = withMiddleware<MouseEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
+  });
+  const createTouchStartHandler = withMiddleware<TouchEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 1 });
+  });
+  const createTouchMoveHandler = withMiddleware<TouchEvent, { clientX: number, clientY: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top });
+  });
+  const createTouchEndHandler = withMiddleware<TouchEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
+    ev.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    next({ clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 0 });
+  });
 
   if ('OffscreenCanvas' in window && 'Worker' in window && 'ResizeObserver' in window) {
-    canvas.addEventListener('mousedown', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mousedown', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
-    });
-    canvas.addEventListener('mousemove', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mousemove', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top });
-    });
-    canvas.addEventListener('mouseup', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mouseup', clientX: ev.clientX - rect.left, clientY: ev.clientY - rect.top, buttons: ev.buttons });
-    });
-    canvas.addEventListener('touchstart', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mousedown', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 1 });
-    });
-    canvas.addEventListener('touchmove', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mousemove', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top });
-    });
-    canvas.addEventListener('touchend', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      worker.postMessage({ type: 'mouseup', clientX: ev.changedTouches[0].clientX - rect.left, clientY: ev.changedTouches[0].clientY - rect.top, buttons: 0 });
-    });
+    canvas.addEventListener('mousedown', createMouseDownHandler(({ clientX, clientY, buttons }) => {
+      worker.postMessage({ type: 'mousedown', clientX, clientY, buttons });
+    }));
+    canvas.addEventListener('mousemove', createMouseMoveHandler(({ clientX, clientY }) => {
+      worker.postMessage({ type: 'mousemove', clientX, clientY });
+    }));
+    canvas.addEventListener('mouseup', createMouseUpHandler(({ clientX, clientY, buttons }) => {
+      worker.postMessage({ type: 'mouseup', clientX, clientY, buttons });
+    }));
+    canvas.addEventListener('touchstart', createTouchStartHandler(({ clientX, clientY, buttons }) => {
+      worker.postMessage({ type: 'mousedown', clientX, clientY, buttons });
+    }));
+    canvas.addEventListener('touchmove', createTouchMoveHandler(({ clientX, clientY }) => {
+      worker.postMessage({ type: 'mousemove', clientX, clientY });
+    }));
+    canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
+      worker.postMessage({ type:'mouseup', clientX, clientY, buttons });
+    }));
     const offscreenCanvas = canvas.transferControlToOffscreen();
     const worker = new MyWorker();
     worker.postMessage({ type: 'baseURI', baseURI: document.baseURI });
@@ -58,46 +85,24 @@ export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes)
       mouseY: 0,
       mouseButtons: 0,
     };
-    canvas.addEventListener('mousedown', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.clientX - rect.left;
-      ctx.mouseY = ev.clientY - rect.top;
-      ctx.mouseButtons = ev.buttons;
-    });
-    canvas.addEventListener('mousemove', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.clientX - rect.left;
-      ctx.mouseY = ev.clientY - rect.top;
-    });
-    canvas.addEventListener('mouseup', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.clientX - rect.left;
-      ctx.mouseY = ev.clientY - rect.top;
-      ctx.mouseButtons = ev.buttons;
-    });
-    canvas.addEventListener('touchstart', (ev) => {
-      ev.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
-      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
-      ctx.mouseButtons = 1;
-    });
-    canvas.addEventListener('touchmove', (ev) => {
-      ev.preventDefault();      
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
-      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
-    });
-    canvas.addEventListener('touchend', (ev) => {
-      ev.preventDefault();      
-      const rect = canvas.getBoundingClientRect();
-      ctx.mouseX = ev.changedTouches[0].clientX - rect.left;
-      ctx.mouseY = ev.changedTouches[0].clientY - rect.top;
-      ctx.mouseButtons = 0;
-    });
+    canvas.addEventListener('mousedown', createMouseDownHandler(({ clientX, clientY, buttons }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+    }));
+    canvas.addEventListener('mousemove', createMouseMoveHandler(({ clientX, clientY }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY });
+    }));
+    canvas.addEventListener('mouseup', createMouseUpHandler(({ clientX, clientY, buttons }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+    }));
+    canvas.addEventListener('touchstart', createTouchStartHandler(({ clientX, clientY, buttons }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+    }));
+    canvas.addEventListener('touchmove', createTouchMoveHandler(({ clientX, clientY }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY });
+    }));
+    canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
+      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+    }));
     import('./game.ts').then(({ game }) => {
       game(ctx);
     });
