@@ -144,11 +144,27 @@ type Font struct {
 	monospaceWidth float32
 }
 
-// LoadFont - Load monospaced font from a font atlas file into GPU memory (VRAM)
-// see https://bernhardfritz.github.io/monospace-font-atlas-generator/
-func LoadFont(fileName string) Font {
-	// TODO accept CSS font string instead of file path to font atlas
-	texture := LoadTexture(fileName)
+//export loadFont
+func loadFont(font string, bytes []byte)
+
+// LoadFont - Load monospaced font from a CSS font string into GPU memory (VRAM)
+func LoadFont(cssFont string) Font {
+	var bytes [12]byte
+	loadFont(cssFont, bytes[:])
+	id := int(littleEndianToUint32(bytes[0:4]))
+	width := int(littleEndianToUint32(bytes[4:8]))
+	height := int(littleEndianToUint32(bytes[8:12]))
+	if width > ctx.maxTextureWidth {
+		ctx.maxTextureWidth = width
+	}
+	if height > ctx.maxTextureHeight {
+		ctx.maxTextureHeight = height
+	}
+	texture := Texture{
+		id:     id,
+		Width:  width,
+		Height: height,
+	}
 
 	return Font{
 		texture:        texture,

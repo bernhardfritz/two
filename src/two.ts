@@ -14,6 +14,7 @@ export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes)
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
+  const fontCanvas = document.createElement('canvas');
   
   const createMouseDownHandler = withMiddleware<MouseEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
     ev.preventDefault();
@@ -66,45 +67,47 @@ export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes)
       worker.postMessage({ type:'mouseup', clientX, clientY, buttons });
     }));
     const offscreenCanvas = canvas.transferControlToOffscreen();
+    const offscreenFontCanvas = fontCanvas.transferControlToOffscreen();
     const worker = new MyWorker();
     worker.postMessage({ type: 'baseURI', baseURI: document.baseURI });
-    worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options }, [offscreenCanvas]);
+    worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options, fontCanvas: offscreenFontCanvas }, [offscreenCanvas, offscreenFontCanvas]);
     const observer = new ResizeObserver(() => {
       worker.postMessage({ type: 'resize', clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight, devicePixelRatio: window.devicePixelRatio });
     });
     observer.observe(canvas);
   } else {
-    const ctx: Context = {
+    const context: Context = {
       gl: canvas.getContext('webgl2', {
         alpha: false,
         depth: false,
         ...options,
       })! as AugmentedWebGL2RenderingContext,
+      fontCanvas,
       baseURI: document.baseURI,
       mouseX: 0,
       mouseY: 0,
       mouseButtons: 0,
     };
     canvas.addEventListener('mousedown', createMouseDownHandler(({ clientX, clientY, buttons }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
     canvas.addEventListener('mousemove', createMouseMoveHandler(({ clientX, clientY }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY });
     }));
     canvas.addEventListener('mouseup', createMouseUpHandler(({ clientX, clientY, buttons }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
     canvas.addEventListener('touchstart', createTouchStartHandler(({ clientX, clientY, buttons }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
     canvas.addEventListener('touchmove', createTouchMoveHandler(({ clientX, clientY }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY });
     }));
     canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
-      Object.assign(ctx, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
+      Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
     import('./game.ts').then(({ game }) => {
-      game(ctx);
+      game(context);
     });
   }
 }

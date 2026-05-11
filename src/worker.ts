@@ -1,43 +1,44 @@
 import { game, type Context } from './game.ts';
 
-const ctx = {} as Context;
+const context = {} as Context;
 
 onmessage = (evt) => {
   switch (evt.data.type) {
     case 'baseURI':
-      ctx.baseURI = evt.data.baseURI;
+      context.baseURI = evt.data.baseURI;
       break;
     case 'canvas':
-      Object.assign(ctx, {
+      Object.assign(context, {
         gl: evt.data.canvas.getContext('webgl2', {
           alpha: false,
           depth: false,
           ...evt.data.options
         })!,
+        fontCanvas: evt.data.fontCanvas,
         mouseX: 0,        
         mouseY: 0,
         mouseButtons: 0,
       })
-      game(ctx);
+      game(context);
       break;
     case 'resize':
-      ctx.gl.canvas.clientWidth = evt.data.clientWidth;
-      ctx.gl.canvas.clientHeight = evt.data.clientHeight;
+      context.gl.canvas.clientWidth = evt.data.clientWidth;
+      context.gl.canvas.clientHeight = evt.data.clientHeight;
       globalThis.devicePixelRatio = evt.data.devicePixelRatio;
       break;
     case 'mousedown':
-      ctx.mouseX = evt.data.clientX;
-      ctx.mouseY = evt.data.clientY;
-      ctx.mouseButtons = evt.data.buttons;
+      context.mouseX = evt.data.clientX;
+      context.mouseY = evt.data.clientY;
+      context.mouseButtons = evt.data.buttons;
       break;
     case 'mousemove':
-      ctx.mouseX = evt.data.clientX;
-      ctx.mouseY = evt.data.clientY;
+      context.mouseX = evt.data.clientX;
+      context.mouseY = evt.data.clientY;
       break;
     case 'mouseup':
-      ctx.mouseX = evt.data.clientX;
-      ctx.mouseY = evt.data.clientY;
-      ctx.mouseButtons = evt.data.buttons;
+      context.mouseX = evt.data.clientX;
+      context.mouseY = evt.data.clientY;
+      context.mouseButtons = evt.data.buttons;
       break;
   }
 }

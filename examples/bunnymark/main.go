@@ -34,7 +34,7 @@ func init() {
 
 func main() {
 	texture := two.LoadTexture("resources/wabbit_alpha.png")
-	font := two.LoadFont("resources/32px monospace.png")
+	font := two.LoadFont("32px monospace")
 	bunnies := make([]*Bunny, 0)
 
 	update := func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int) {
