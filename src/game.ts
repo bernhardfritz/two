@@ -33,7 +33,7 @@ export async function game(context: Context) {
       const mem = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer);
       const targetPath = new TextDecoder().decode(mem.subarray(targetPathPtr, targetPathPtr + targetPathLen));
       const goBytes = mem.subarray(goBytesPtr, goBytesPtr + goBytesLen);
-      efs[targetPath] = goBytes;
+      efs[targetPath] = new Uint8Array(goBytes); // copy is needed because go will garbage collect the shared memory
     },
     'loadTexture': function(fileNamePtr: number, fileNameLen: number, bytesPtr: number, bytesLen: number) {
       const mem = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer);
