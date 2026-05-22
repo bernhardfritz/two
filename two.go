@@ -20,6 +20,7 @@ type context struct {
 	width            int
 	height           int
 	tintColor        vec4
+	transformMatrix  mat4x4
 }
 
 var ctx context
@@ -53,7 +54,9 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 		mat4x4_scale_aniso(&s, t1, dWidth, dHeight, 1)
 		var t2 mat4x4
 		mat4x4_translate(&t2, 0.5+dx, 0.5+dy, 0)
-		mat4x4_mul(&instance.modelMatrix, t2, s)
+		var trs mat4x4
+		mat4x4_mul(&trs, t2, s)
+		mat4x4_mul(&instance.modelMatrix, ctx.transformMatrix, trs)
 	}
 	{
 		var identity mat4x4
@@ -75,13 +78,27 @@ func DrawRectangle(x, y, width, height float32) {
 
 // Clears the background with color specified by red, green, blue and alpha channel values between 0 and 255.
 func ClearBackground(r, g, b, a uint8) {
+	var tmp mat4x4
+	mat4x4_dup(&tmp, ctx.transformMatrix)
+	mat4x4_identity(&ctx.transformMatrix)
 	DrawRectangle(0, 0, float32(ctx.width), float32(ctx.height))
+	mat4x4_dup(&ctx.transformMatrix, tmp)
 	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 // Sets the color to tint textures with specified by red, green, blue and alpha channel values between 0 and 255.
 func SetTintColor(r, g, b, a uint8) {
 	ctx.tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+}
+
+// Sets the matrix to transform all following instances by.
+func SetTransform(a, b, c, d, e, f float32) {
+	ctx.transformMatrix[0][0] = a
+	ctx.transformMatrix[0][1] = b
+	ctx.transformMatrix[1][0] = c
+	ctx.transformMatrix[1][1] = d
+	ctx.transformMatrix[3][0] = e
+	ctx.transformMatrix[3][1] = f
 }
 
 //export writeFile
@@ -192,6 +209,7 @@ func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint
 	ctx.width = int(width)
 	ctx.height = int(height)
 	ctx.tintColor = vec4{1, 1, 1, 1}
+	mat4x4_identity(&ctx.transformMatrix)
 	ctx.update(deltaTime, int(width), int(height), int(mouseX), int(mouseY), int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]
