@@ -8,10 +8,13 @@
   "exports": {
     ".": {
       "import": "./dist/two.js"
+    },
+    "./rollup-plugin-go-wasm": {
+      "import": "./dist/rollup-plugin-go-wasm"
     }
   },
   "scripts": {
-    "build": "tsc && vite build"
+    "build": "tsc && vite build && cp rollup-plugin-go-wasm.js dist/"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

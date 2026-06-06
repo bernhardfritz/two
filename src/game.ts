@@ -3,11 +3,6 @@ import { renderer, sizeof, sizes, type AugmentedWebGL2RenderingContext } from '.
 const DEFAULT_FONT_SIZE = 32;
 const DEFAULT_FONT = `${DEFAULT_FONT_SIZE}px monospace`;
 
-const init: typeof WebAssembly.instantiateStreaming = WebAssembly.instantiateStreaming || (async (resp, importObject) => {
-  const source = await (await resp).arrayBuffer();
-  return await WebAssembly.instantiate(source, importObject);
-});
-
 export interface Context {
   gl: AugmentedWebGL2RenderingContext;
   fontCanvas: HTMLCanvasElement | OffscreenCanvas;
@@ -17,7 +12,7 @@ export interface Context {
   mouseButtons: number;
 }
 
-export async function game(context: Context) {
+export async function game(context: Context, moduleObject: WebAssembly.Module) {
   const gl = context.gl;
   await import(new URL(`${context.baseURI}wasm_exec.js`).href);
   //@ts-ignore
@@ -95,8 +90,8 @@ export async function game(context: Context) {
     // ... other functions
   };
   
-  init(fetch(new URL(`${context.baseURI}main.wasm`)), go.importObject).then(async function (obj) {
-    wasm = obj.instance;
+  WebAssembly.instantiate(moduleObject, go.importObject).then(async function(instance) {
+    wasm = instance;
     go.run(wasm);
     const texture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);

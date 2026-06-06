@@ -10,7 +10,7 @@ function withMiddleware<T, U>(middleware: (t: T, next: (u: U) => void) => void):
   }
 }
 
-export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes) {
+export function two(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Module>, options?: WebGLContextAttributes) {
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
@@ -66,15 +66,17 @@ export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes)
     canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
       worker.postMessage({ type:'mouseup', clientX, clientY, buttons });
     }));
-    const offscreenCanvas = canvas.transferControlToOffscreen();
-    const offscreenFontCanvas = fontCanvas.transferControlToOffscreen();
     const worker = new MyWorker();
     worker.postMessage({ type: 'baseURI', baseURI: document.baseURI });
-    worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options, fontCanvas: offscreenFontCanvas }, [offscreenCanvas, offscreenFontCanvas]);
-    const observer = new ResizeObserver(() => {
-      worker.postMessage({ type: 'resize', clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight, devicePixelRatio: window.devicePixelRatio });
+    wasm.then((moduleObject) => {
+      const offscreenCanvas = canvas.transferControlToOffscreen();
+      const offscreenFontCanvas = fontCanvas.transferControlToOffscreen();
+      worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options, fontCanvas: offscreenFontCanvas, moduleObject }, [offscreenCanvas, offscreenFontCanvas]);
+      const observer = new ResizeObserver(() => {
+        worker.postMessage({ type: 'resize', clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight, devicePixelRatio: window.devicePixelRatio });
+      });
+      observer.observe(canvas);
     });
-    observer.observe(canvas);
   } else {
     const context: Context = {
       gl: canvas.getContext('webgl2', {
@@ -106,8 +108,8 @@ export function two(canvas: HTMLCanvasElement, options?: WebGLContextAttributes)
     canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
       Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
-    import('./game.ts').then(({ game }) => {
-      game(context);
+    Promise.all([import('./game.ts'), wasm]).then(([{ game }, moduleObject]) => {
+      game(context, moduleObject);
     });
   }
 }

@@ -19,7 +19,7 @@ onmessage = (evt) => {
         mouseY: 0,
         mouseButtons: 0,
       })
-      game(context);
+      game(context, evt.data.moduleObject);
       break;
     case 'resize':
       context.gl.canvas.clientWidth = evt.data.clientWidth;
