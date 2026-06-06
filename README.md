@@ -16,7 +16,6 @@ npm install
 npm run build
 cd examples/bunnymark/
 npm install
-npm run build
 <CTRL-D>
 ```
 
