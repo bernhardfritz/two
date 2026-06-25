@@ -14,11 +14,11 @@ type perInstanceData struct {
 
 type context struct {
 	instances        []perInstanceData
-	maxTextureWidth  int
-	maxTextureHeight int
-	update           func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)
-	width            int
-	height           int
+	maxTextureWidth  float64
+	maxTextureHeight float64
+	update           func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int)
+	width            float64
+	height           float64
 	tintColor        vec4
 	transformMatrix  mat4x4
 }
@@ -28,22 +28,22 @@ var ctx context
 // Texture, tex data stored in GPU memory (VRAM)
 type Texture struct {
 	id     int
-	Width  int
-	Height int
+	Width  float64
+	Height float64
 }
 
 // Draws a texture onto the canvas where dx and dy specify the coordinates of the top-left corner.
-func DrawTexture2f(texture Texture, dx, dy float32) {
-	DrawTexture8f(texture, dx, dy, float32(texture.Width), float32(texture.Height), 0, 0, float32(texture.Width), float32(texture.Height))
+func DrawTexture2f(texture Texture, dx, dy float64) {
+	DrawTexture8f(texture, dx, dy, texture.Width, texture.Height, 0, 0, texture.Width, texture.Height)
 }
 
 // Draws a texture of width dWidth and height dHeight onto the canvas where dx and dy specify the coordinates of the top-left corner.
-func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float32) {
-	DrawTexture8f(texture, dx, dy, dWidth, dHeight, 0, 0, float32(texture.Width), float32(texture.Height))
+func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float64) {
+	DrawTexture8f(texture, dx, dy, dWidth, dHeight, 0, 0, texture.Width, texture.Height)
 }
 
 // Draws a texture of width dWidth and height dHeight onto the canvas where dx and dy specify the coordinates of the top-left corner and parameters sx, sy, sWidth and sHeight define a texture subsection to read from.
-func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float32) {
+func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float64) {
 	instance := perInstanceData{
 		tintColor: ctx.tintColor,
 	}
@@ -51,9 +51,9 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 		var t1 mat4x4
 		mat4x4_translate(&t1, -0.5, -0.5, 0) // -0.5 to compensate because quad is offset for the purpose of dual usage as uv coordinates
 		var s mat4x4
-		mat4x4_scale_aniso(&s, t1, dWidth, dHeight, 1)
+		mat4x4_scale_aniso(&s, t1, float32(dWidth), float32(dHeight), 1)
 		var t2 mat4x4
-		mat4x4_translate(&t2, 0.5+dx, 0.5+dy, 0)
+		mat4x4_translate(&t2, 0.5+float32(dx), 0.5+float32(dy), 0)
 		var trs mat4x4
 		mat4x4_mul(&trs, t2, s)
 		mat4x4_mul(&instance.modelMatrix, ctx.transformMatrix, trs)
@@ -62,9 +62,9 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 		var identity mat4x4
 		mat4x4_identity(&identity)
 		var s mat4x4
-		mat4x4_scale_aniso(&s, identity, sWidth/float32(ctx.maxTextureWidth), sHeight/float32(ctx.maxTextureHeight), 1)
+		mat4x4_scale_aniso(&s, identity, float32(sWidth/ctx.maxTextureWidth), float32(sHeight/ctx.maxTextureHeight), 1)
 		var t mat4x4
-		mat4x4_translate(&t, sx/float32(ctx.maxTextureWidth), sy/float32(ctx.maxTextureHeight), 0)
+		mat4x4_translate(&t, float32(sx/ctx.maxTextureWidth), float32(sy/ctx.maxTextureHeight), 0)
 		mat4x4_mul(&instance.textureMatrix, t, s)
 		instance.textureMatrix[3][3] = float32(texture.id + 1) // add 1 because first texture is 1x1 white pixel
 	}
@@ -72,7 +72,7 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 }
 
 // Draws a color-filled rectangle
-func DrawRectangle(x, y, width, height float32) {
+func DrawRectangle(x, y, width, height float64) {
 	DrawTexture4f(Texture{id: -1, Width: 1, Height: 1}, x, y, width, height)
 }
 
@@ -81,7 +81,7 @@ func ClearBackground(r, g, b, a uint8) {
 	var tmp mat4x4
 	mat4x4_dup(&tmp, ctx.transformMatrix)
 	mat4x4_identity(&ctx.transformMatrix)
-	DrawRectangle(0, 0, float32(ctx.width), float32(ctx.height))
+	DrawRectangle(0, 0, ctx.width, ctx.height)
 	mat4x4_dup(&ctx.transformMatrix, tmp)
 	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
@@ -92,13 +92,13 @@ func SetTintColor(r, g, b, a uint8) {
 }
 
 // Sets the matrix to transform all following instances by.
-func SetTransform(a, b, c, d, e, f float32) {
-	ctx.transformMatrix[0][0] = a
-	ctx.transformMatrix[0][1] = b
-	ctx.transformMatrix[1][0] = c
-	ctx.transformMatrix[1][1] = d
-	ctx.transformMatrix[3][0] = e
-	ctx.transformMatrix[3][1] = f
+func SetTransform(a, b, c, d, e, f float64) {
+	ctx.transformMatrix[0][0] = float32(a)
+	ctx.transformMatrix[0][1] = float32(b)
+	ctx.transformMatrix[1][0] = float32(c)
+	ctx.transformMatrix[1][1] = float32(d)
+	ctx.transformMatrix[3][0] = float32(e)
+	ctx.transformMatrix[3][1] = float32(f)
 }
 
 //export writeFile
@@ -139,8 +139,8 @@ func LoadTexture(fileName string) Texture {
 	var bytes [12]byte
 	loadTexture(fileName, bytes[:])
 	id := int(littleEndianToUint32(bytes[0:4]))
-	width := int(littleEndianToUint32(bytes[4:8]))
-	height := int(littleEndianToUint32(bytes[8:12]))
+	width := float64(littleEndianToUint32(bytes[4:8]))
+	height := float64(littleEndianToUint32(bytes[8:12]))
 	if width > ctx.maxTextureWidth {
 		ctx.maxTextureWidth = width
 	}
@@ -157,8 +157,8 @@ func LoadTexture(fileName string) Texture {
 
 type Font struct {
 	texture        Texture
-	size           int
-	monospaceWidth float32
+	size           float64
+	monospaceWidth float64
 }
 
 //export loadFont
@@ -169,8 +169,8 @@ func LoadFont(cssFont string) Font {
 	var bytes [12]byte
 	loadFont(cssFont, bytes[:])
 	id := int(littleEndianToUint32(bytes[0:4]))
-	width := int(littleEndianToUint32(bytes[4:8]))
-	height := int(littleEndianToUint32(bytes[8:12]))
+	width := float64(littleEndianToUint32(bytes[4:8]))
+	height := float64(littleEndianToUint32(bytes[8:12]))
 	if width > ctx.maxTextureWidth {
 		ctx.maxTextureWidth = width
 	}
@@ -186,31 +186,31 @@ func LoadFont(cssFont string) Font {
 	return Font{
 		texture:        texture,
 		size:           (texture.Height - 7) / 6,
-		monospaceWidth: float32(texture.Width-17) / 16,
+		monospaceWidth: float64(texture.Width-17) / 16,
 	}
 }
 
 // Draws color-filled monospaced text
-func DrawText(font Font, text string, x, y float32, size int) {
-	scale := float32(size) / float32(font.size)
+func DrawText(font Font, text string, x, y float64, size int) {
+	scale := float64(size) / float64(font.size)
 	for pos, char := range text {
-		DrawTexture8f(font.texture, x+scale*float32(pos)*font.monospaceWidth, y, scale*font.monospaceWidth, float32(size), 1+float32((char-' ')%16)*(font.monospaceWidth+1), 1+float32((char-' ')/16)*float32(font.size+1), font.monospaceWidth, float32(font.size))
+		DrawTexture8f(font.texture, x+scale*float64(pos)*font.monospaceWidth, y, scale*font.monospaceWidth, float64(size), 1+float64((char-' ')%16)*(font.monospaceWidth+1), 1+float64((char-' ')/16)*float64(font.size+1), font.monospaceWidth, float64(font.size))
 	}
 }
 
 // Sets the function to call when it's time to update your game for the next repaint
-func SetGameLoop(update func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int)) {
+func SetGameLoop(update func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int)) {
 	ctx.update = update
 	select {}
 }
 
 //export update
 func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
-	ctx.width = int(width)
-	ctx.height = int(height)
+	ctx.width = width
+	ctx.height = height
 	ctx.tintColor = vec4{1, 1, 1, 1}
 	mat4x4_identity(&ctx.transformMatrix)
-	ctx.update(deltaTime, int(width), int(height), int(mouseX), int(mouseY), int(mouseButtons))
+	ctx.update(deltaTime, width, height, mouseX, mouseY, int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]
 
