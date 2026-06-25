@@ -23,5 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-examples/bunnymark/public/main.wasm
-examples/bunnymark/public/wasm_exec.js
+/examples/*/public/main.wasm
+/examples/*/public/wasm_exec.js
+
+/nginx/html/two/*/
