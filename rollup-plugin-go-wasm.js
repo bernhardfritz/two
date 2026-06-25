@@ -5,8 +5,13 @@ import { promisify } from 'node:util';
 const execAsync = promisify(exec);
 
 export default function() {
+  let config;
+
   return {
     name: 'rolldown-plugin-go-wasm',
+    configResolved(resolvedConfig) {
+      config = resolvedConfig;
+    },
     resolveId(source, importer) {
       if (source.endsWith('.go')) {
         return path.resolve(path.dirname(importer), source);
@@ -24,7 +29,7 @@ export default function() {
       const wasmFileName = `${parsedPath.name}.wasm`;
       const wasmOutputPath = path.join('public', wasmFileName);
       
-      await execAsync(`cp $(tinygo env TINYGOROOT)/targets/wasm_exec.js public/ && tinygo build -o '${wasmOutputPath}' '${id}'`, {
+      await execAsync(`cp $(tinygo env TINYGOROOT)/targets/wasm_exec.js public/ && tinygo build -o '${wasmOutputPath}'${config.mode === 'production' ? ' --no-debug ' : ' '}'${id}'`, {
         env: {
           ...process.env,
           GOOS: 'js',
