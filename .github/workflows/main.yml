@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
-        run: npm ci && npm run build && npm --prefix ./examples/bunnymark/ ci
+        run: npm ci && npm run build && for example in ./examples/*/; do npm --prefix "$example" ci; done
       - name: Bundle js
         run: for example in ./examples/*/; do npm --prefix "$example" run build -- --base /two/$(basename $example)/ --outDir ../../nginx/html/two/$(basename $example)/; done
       # Popular action to deploy to GitHub Pages:
