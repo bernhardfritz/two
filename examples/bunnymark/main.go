@@ -12,7 +12,7 @@ import (
 const maxBatchElements = 8192
 
 type Vector2 struct {
-	X, Y float32
+	X, Y float64
 }
 
 type Color struct {
@@ -37,18 +37,18 @@ func main() {
 	font := two.LoadFont("32px monospace")
 	bunnies := make([]*Bunny, 0)
 
-	update := func(deltaTime float64, width, height, mouseX, mouseY, mouseButtons int) {
+	update := func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int) {
 		if mouseButtons == 1 {
 			// Create more bunnies
 			for i := 0; i < 100; i++ {
 				b := &Bunny{}
-				b.Position.X = float32(mouseX)
-				b.Position.Y = float32(mouseY)
-				b.Speed.X = randomFloat32(-250, 250) / 60
-				b.Speed.Y = randomFloat32(-250, 250) / 60
-				b.Color.R = uint8(randomFloat32(50, 240))
-				b.Color.G = uint8(randomFloat32(80, 240))
-				b.Color.B = uint8(randomFloat32(100, 240))
+				b.Position.X = mouseX
+				b.Position.Y = mouseY
+				b.Speed.X = randomFloat64(-250, 250) / 60
+				b.Speed.Y = randomFloat64(-250, 250) / 60
+				b.Color.R = uint8(randomFloat64(50, 240))
+				b.Color.G = uint8(randomFloat64(80, 240))
+				b.Color.B = uint8(randomFloat64(100, 240))
 				b.Color.A = 255
 
 				bunnies = append(bunnies, b)
@@ -60,11 +60,11 @@ func main() {
 			b.Position.X += b.Speed.X
 			b.Position.Y += b.Speed.Y
 
-			if ((b.Position.X + float32(texture.Width/2)) > float32(width)) || ((b.Position.X + float32(texture.Width/2)) < 0) {
+			if ((b.Position.X + texture.Width/2) > width) || ((b.Position.X + texture.Width/2) < 0) {
 				b.Speed.X *= -1
 			}
 
-			if ((b.Position.Y + float32(texture.Height/2)) > float32(height)) || ((b.Position.Y + float32(texture.Height/2-40)) < 0) {
+			if ((b.Position.Y + texture.Height/2) > height) || ((b.Position.Y + texture.Height/2 - 40) < 0) {
 				b.Speed.Y *= -1
 			}
 		}
@@ -75,7 +75,7 @@ func main() {
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}
 		two.SetTintColor(0, 0, 0, 255)
-		two.DrawRectangle(0, 0, float32(width), 40)
+		two.DrawRectangle(0, 0, width, 40)
 		two.SetTintColor(0, 228, 48, 255)
 		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
 		two.SetTintColor(190, 33, 55, 255)
@@ -86,8 +86,8 @@ func main() {
 	two.SetGameLoop(update)
 }
 
-func randomFloat32(inclusive, exclusive float32) float32 {
-	return inclusive + (exclusive-inclusive)*rand.Float32()
+func randomFloat64(inclusive, exclusive float64) float64 {
+	return inclusive + (exclusive-inclusive)*rand.Float64()
 }
 
 const FPS_CAPTURE_FRAMES_COUNT = 30 // 30 captures
@@ -117,10 +117,10 @@ func GetFPS(deltaTime float64) int {
 	}
 
 	// 5. FPS = Frames / Total Seconds
-	return int(math.Round(float64(FPS_CAPTURE_FRAMES_COUNT) / sum))
+	return int(math.Round(FPS_CAPTURE_FRAMES_COUNT / sum))
 }
 
-func DrawFPS(font two.Font, deltaTime float64, x, y float32, size int) {
+func DrawFPS(font two.Font, deltaTime, x, y float64, size int) {
 	fps := GetFPS(deltaTime)
 	if 15 <= fps && fps < 30 {
 		two.SetTintColor(255, 161, 0, 255)
