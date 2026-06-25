@@ -70,7 +70,6 @@ jobs:
         with:
           path: nginx/html/two/
           pattern: nginx-html-two-*
-          merge-multiple: true
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
