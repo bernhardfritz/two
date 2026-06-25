@@ -9,22 +9,70 @@ jobs:
     container:
       image: tinygo/tinygo:0.40.1
       options: --user 1001
+    outputs:
+      examples: ${{ steps.examples.outputs.matrix }}
     steps:
       - uses: actions/checkout@v6
-      - name: Build wasm
-        run: cp /usr/local/tinygo/targets/wasm_exec.js ./examples/bunnymark/public/ && GOOS=js GOARCH=wasm tinygo build -o examples/bunnymark/public/main.wasm --no-debug ./examples/bunnymark/main.go
       - uses: actions/setup-node@v6
         with:
           node-version: 24
       - name: Install dependencies
-        run: npm ci && npm run build && for example in ./examples/*/; do npm --prefix "$example" ci; done
-      - name: Bundle js
-        run: for example in ./examples/*/; do npm --prefix "$example" run build -- --base /two/$(basename $example)/ --outDir ../../nginx/html/two/$(basename $example)/; done
-      # Popular action to deploy to GitHub Pages:
-      # Docs: https://github.com/peaceiris/actions-gh-pages
+        run: npm ci
+      - name: Build library and plugin
+        run: npm run build
+      - name: List examples
+        id: examples
+        run: |
+          examples=$(ls -d ./examples/*/ | xargs -n1 basename | awk -v ORS=',' '{print "\""$0"\""}' | sed 's/,$//')
+          echo "matrix=[${examples}]" >> $GITHUB_OUTPUT
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  build-examples:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: tinygo/tinygo:0.40.1
+      options: --user 1001
+    strategy:
+      matrix:
+        example: ${{ fromJson(needs.build.outputs.examples) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Download dist folder
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Install dependencies
+        run: npm --prefix "./examples/${{ matrix.example }}" ci
+      - name: Build example
+        run: npm --prefix "./examples/${{ matrix.example }}" run build -- --base /two/${{ matrix.example }}/ --outDir ../../nginx/html/two/${{ matrix.example }}/
+      - name: Upload example
+        uses: actions/upload-artifact@v4
+        with:
+          name: nginx-html-two-${{ matrix.example }}
+          path: nginx/html/two/${{ matrix.example }}/
+          retention-days: 1
+  deploy:
+    needs: build-examples
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download examples
+        uses: actions/download-artifact@v4
+        with:
+          path: nginx/html/two/
+          pattern: nginx-html-two-*
+          merge-multiple: true
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Build output to publish to the `gh-pages` branch:
