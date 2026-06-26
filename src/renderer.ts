@@ -61,6 +61,7 @@ function offsetof(attributes: Map<string, keyof typeof sizes>, member: string) {
 
 function resizeCanvasToDisplaySize(canvas: WebGL2RenderingContext['canvas'] & { clientWidth: number, clientHeight: number }, multiplier?: number) {
   multiplier = multiplier || 1;
+  multiplier = Math.max(0, multiplier);
   const width  = canvas.clientWidth  * multiplier | 0;
   const height = canvas.clientHeight * multiplier | 0;
   if (canvas.width !== width ||  canvas.height !== height) {
