@@ -1,0 +1,9 @@
+<html>
+<head><title>Index of /{{ .DirPath }}/</title></head>
+<body>
+<h1>Index of /{{.DirPath}}/</h1><hr><pre><a href="../">../</a>
+{{ range .Entries -}}
+<a href="{{ .Name }}">{{ .Name }}/</a>
+{{ end -}}
+</pre><hr></body>
+</html>
