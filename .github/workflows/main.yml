@@ -30,6 +30,7 @@ jobs:
         with:
           name: dist
           path: dist/
+          retention-days: 1
   build-examples:
     needs: build
     runs-on: ubuntu-latest
@@ -52,30 +53,37 @@ jobs:
       - name: Install dependencies
         run: npm --prefix "./examples/${{ matrix.example }}" ci
       - name: Build example
-        run: npm --prefix "./examples/${{ matrix.example }}" run build -- --base /two/${{ matrix.example }}/ --outDir ../../nginx/html/two/${{ matrix.example }}/
+        run: npm --prefix "./examples/${{ matrix.example }}" run build -- --base /two/${{ matrix.example }}/
       - name: Upload example
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.example }}
-          path: nginx/html/two/${{ matrix.example }}/
+          path: examples/${{ matrix.example }}/dist/
           retention-days: 1
   deploy:
     needs: build-examples
     runs-on: ubuntu-latest
+    container:
+      image: tinygo/tinygo:0.40.1
+      options: --user 1001
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v6
+      - name: Create directory
+        run: mkdir two
       - name: Download examples
         uses: actions/download-artifact@v4
         with:
-          path: nginx/html/two/
-          pattern: '*'
+          path: two/
+          pattern: '!dist'
+      - name: Generate index.html
+        run: index_html=$(go run index/index.go two/) && echo "$index_html" > two/index.html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Build output to publish to the `gh-pages` branch:
-          publish_dir: ./nginx/html/two/
+          publish_dir: ./two/
           # The following lines assign commit authorship to the official
           # GH-Actions bot for deploys to `gh-pages` branch:
           # https://github.com/actions/checkout/issues/13#issuecomment-724415212

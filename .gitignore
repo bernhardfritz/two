@@ -26,4 +26,4 @@ dist-ssr
 /examples/*/public/main.wasm
 /examples/*/public/wasm_exec.js
 
-/nginx/html/two/*/
+/two/
