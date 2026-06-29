@@ -1,5 +1,5 @@
 <html>
-<head><title>Index of /{{ .DirPath }}/</title></head>
+<head><title>Index of /{{ .DirPath }}/</title><meta name="color-scheme" content="light dark"></head>
 <body>
 <h1>Index of /{{.DirPath}}/</h1><hr><pre><a href="../">../</a>
 {{ range .Entries -}}
