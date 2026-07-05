@@ -32,6 +32,24 @@ type Texture struct {
 	Height float64
 }
 
+func textureFromBytes(bytes []byte) Texture {
+	id := int(littleEndianToUint32(bytes[0:4]))
+	width := float64(littleEndianToUint32(bytes[4:8]))
+	height := float64(littleEndianToUint32(bytes[8:12]))
+	if width > ctx.maxTextureWidth {
+		ctx.maxTextureWidth = width
+	}
+	if height > ctx.maxTextureHeight {
+		ctx.maxTextureHeight = height
+	}
+
+	return Texture{
+		id:     id,
+		Width:  width,
+		Height: height,
+	}
+}
+
 // Draws a texture onto the canvas where dx and dy specify the coordinates of the top-left corner.
 func DrawTexture2f(texture Texture, dx, dy float64) {
 	DrawTexture8f(texture, dx, dy, texture.Width, texture.Height, 0, 0, texture.Width, texture.Height)
@@ -138,21 +156,8 @@ func littleEndianToUint32(bytes []byte) uint32 {
 func LoadTexture(fileName string) Texture {
 	var bytes [12]byte
 	loadTexture(fileName, bytes[:])
-	id := int(littleEndianToUint32(bytes[0:4]))
-	width := float64(littleEndianToUint32(bytes[4:8]))
-	height := float64(littleEndianToUint32(bytes[8:12]))
-	if width > ctx.maxTextureWidth {
-		ctx.maxTextureWidth = width
-	}
-	if height > ctx.maxTextureHeight {
-		ctx.maxTextureHeight = height
-	}
 
-	return Texture{
-		id:     id,
-		Width:  width,
-		Height: height,
-	}
+	return textureFromBytes(bytes[:])
 }
 
 type Font struct {
@@ -168,20 +173,7 @@ func loadFont(font string, bytes []byte)
 func LoadFont(cssFont string) Font {
 	var bytes [12]byte
 	loadFont(cssFont, bytes[:])
-	id := int(littleEndianToUint32(bytes[0:4]))
-	width := float64(littleEndianToUint32(bytes[4:8]))
-	height := float64(littleEndianToUint32(bytes[8:12]))
-	if width > ctx.maxTextureWidth {
-		ctx.maxTextureWidth = width
-	}
-	if height > ctx.maxTextureHeight {
-		ctx.maxTextureHeight = height
-	}
-	texture := Texture{
-		id:     id,
-		Width:  width,
-		Height: height,
-	}
+	texture := textureFromBytes(bytes[:])
 
 	return Font{
 		texture:        texture,
