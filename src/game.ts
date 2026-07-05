@@ -12,6 +12,12 @@ export interface Context {
   mouseButtons: number;
 }
 
+interface ImageBitmapItem {
+  data: Promise<ImageBitmap>,
+  width: number;
+  height: number;
+}
+
 export async function game(context: Context, moduleObject: WebAssembly.Module) {
   const gl = context.gl;
   await import(new URL(`${context.baseURI}wasm_exec.js`).href);
@@ -19,9 +25,13 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm: WebAssembly.Instance;
   const efs: Record<string, Uint8Array<ArrayBuffer>> = {};
-  let bitmapPromises: Promise<ImageBitmap>[] = [createImageBitmap(new ImageData(new Uint8ClampedArray([255, 255, 255, 255]), 1, 1))];
-  let maxBitmapWidth = 1;
-  let maxBitmapHeight = 1;
+  const imageBitmapItems: ImageBitmapItem[] = [];
+  const whitePixel: ImageBitmapItem = {
+    data: createImageBitmap(new ImageData(new Uint8ClampedArray([255, 255, 255, 255]), 1, 1)),
+    width: 1,
+    height: 1,
+  };
+  imageBitmapItems.push(whitePixel);
   // This part goes after "const go = new Go();" declaration.
   go.importObject.env = {
     'writeFile': function(targetPathPtr: number, targetPathLen: number, goBytesPtr: number, goBytesLen: number) {
@@ -35,19 +45,18 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
       const fileName = new TextDecoder().decode(mem.subarray(fileNamePtr, fileNamePtr + fileNameLen));
       const data = efs[fileName];
       const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength);
-      const width = dataView.getUint32(16); // PNG
-      const height = dataView.getUint32(20);
-      const id = bitmapPromises.length - 1; // subtract 1 because first bitmap is 1x1 white pixel
       const blob = new Blob([data], { type: 'image/png' });
-      const bitmap = createImageBitmap(blob);
-      bitmapPromises.push(bitmap);
-      maxBitmapWidth = Math.max(maxBitmapWidth, width);
-      maxBitmapHeight = Math.max(maxBitmapHeight, height);
+      const imageBitmapItem: ImageBitmapItem = {
+        data: createImageBitmap(blob),
+        width: dataView.getUint32(16), // PNG
+        height: dataView.getUint32(20),
+      }
+      const id = imageBitmapItems.push(imageBitmapItem) - 2; // subtract 2 because first bitmap is 1x1 white pixel
       const bytes = mem.subarray(bytesPtr, bytesPtr + bytesLen)
       const bytesView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       bytesView.setUint32(0, id, true);
-      bytesView.setUint32(4, width, true);
-      bytesView.setUint32(8, height, true);
+      bytesView.setUint32(4, imageBitmapItem.width, true);
+      bytesView.setUint32(8, imageBitmapItem.height, true);
     },
     'loadFont': function(fontPtr: number, fontLen: number, bytesPtr: number, bytesLen: number) {
       const mem = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer);
@@ -76,16 +85,17 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
           ctx.fillText(String.fromCharCode(32 + row * columns + col), gap + col * (ctx.measureText('a').width + gap), gap + fontSize + row * (gap + fontSize) - ctx.measureText(String.fromCharCode(...Array.from({ length: 95 }, (_, i) => 32 + i))).actualBoundingBoxDescent + 1);
         }
       }
-      const id = bitmapPromises.length - 1; // subtract 1 because first bitmap is 1x1 white pixel
-      const bitmap = createImageBitmap(context.fontCanvas);
-      bitmapPromises.push(bitmap);
-      maxBitmapWidth = Math.max(maxBitmapWidth, context.fontCanvas.width);
-      maxBitmapHeight = Math.max(maxBitmapHeight, context.fontCanvas.height);
+      const imageBitmapItem: ImageBitmapItem = { 
+        data: createImageBitmap(context.fontCanvas),
+        width: context.fontCanvas.width,
+        height: context.fontCanvas.height,
+      }
+      const id = imageBitmapItems.push(imageBitmapItem) - 2; // subtract 2 because first bitmap is 1x1 white pixel
       const bytes = mem.subarray(bytesPtr, bytesPtr + bytesLen)
       const bytesView = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       bytesView.setUint32(0, id, true);
-      bytesView.setUint32(4, context.fontCanvas.width, true);
-      bytesView.setUint32(8, context.fontCanvas.height, true);
+      bytesView.setUint32(4, imageBitmapItem.width, true);
+      bytesView.setUint32(8, imageBitmapItem.height, true);
     }
     // ... other functions
   };
@@ -101,14 +111,15 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
     // TODO when loading textures, the clamping setting could also be relevant. see https://github.com/gfxfundamentals/webgl-fundamentals/discussions/396
     // gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     // gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, maxBitmapWidth, maxBitmapHeight, bitmapPromises.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    bitmapPromises = bitmapPromises.map((bitmapPromise, index) => bitmapPromise.then((bitmap) => {
-      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, index, bitmap.width, bitmap.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
-      bitmap.close();
-
-      return bitmap;
-    }));
-    await Promise.all(bitmapPromises);
+    const maxImageBitmapWidth = imageBitmapItems.reduce((acc, imageBitmapItem) => Math.max(acc, imageBitmapItem.width), 0);
+    const maxImageBitmapHeight = imageBitmapItems.reduce((acc, imageBitmapItem) => Math.max(acc, imageBitmapItem.height), 0);
+    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, maxImageBitmapWidth, maxImageBitmapHeight, imageBitmapItems.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const promises = imageBitmapItems
+      .map((texImageSourceItem, index) => texImageSourceItem.data.then((imageBitmap) => {
+        gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, index, imageBitmap.width, imageBitmap.height, 1, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+        imageBitmap.close();
+      }));
+    await Promise.all(promises);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
 
     const attributes = new Map<string, keyof typeof sizes>([
