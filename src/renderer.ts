@@ -40,7 +40,7 @@ export const sizes = {
 
 export function sizeof(attributes: Map<string, keyof typeof sizes>) {
   let size = 0;
-  for (const [_key, value] of attributes) {
+  for (const value of attributes.values()) {
     size += sizes[value];     
   }
 
@@ -139,13 +139,7 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
   gl.enableVertexAttribArray(positionAttributeLocation);
 
   // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-  const size = 2;          // 2 components per iteration
-  const type = gl.FLOAT;   // the data is 32bit floats
-  const normalize = false; // don't normalize the data
-  const stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-  const offset = 0;        // start at the beginning of the buffer
-  gl.vertexAttribPointer(
-      positionAttributeLocation, size, type, normalize, stride, offset);
+  gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
   const instanceBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
@@ -172,39 +166,32 @@ export function renderer(gl: AugmentedWebGL2RenderingContext, attributes: Map<st
    
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    
+  
+  // Tell it to use our program (pair of shaders)
+  gl.useProgram(program);
+  gl.uniform1i(textureUniformLocation, 0);
+
+  // Bind the attribute/buffer set we want.
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+
+  const sizeOfAttributes = sizeof(attributes);
+  const stride = sizeOfAttributes / Float32Array.BYTES_PER_ELEMENT;
+
   return (instances: Float32Array<ArrayBuffer>) => {
-    resizeCanvasToDisplaySize(gl.canvas, globalThis.devicePixelRatio);
+    if (resizeCanvasToDisplaySize(gl.canvas, globalThis.devicePixelRatio)) {
+      // Tell WebGL how to convert from clip space to pixels
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    // Tell WebGL how to convert from clip space to pixels
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      const projectionMatrix = orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
+      gl.uniformMatrix4fv(projectionUniformLocation, false, projectionMatrix);
+    }
 
-    // Clear the canvas
-    // gl.clearColor(0, 0, 0, 0);
-    // gl.clear(gl.COLOR_BUFFER_BIT);
-
-    // Tell it to use our program (pair of shaders)
-    gl.useProgram(program); // TODO probably enough to call once instead of once per frame
-    
-    const projectionMatrix = orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, -1, 1);
-    gl.uniformMatrix4fv(projectionUniformLocation, false,
-        projectionMatrix);
-    gl.uniform1i(textureUniformLocation, 0); // TODO shouldn't be hardcoded
-
-    // Bind the attribute/buffer set we want.
-    gl.bindVertexArray(vao); // TODO probably enough to call once instead of once per frame 
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer); // TODO probably enough to call once instead of once per frame
-    const instanceCount = instances.byteLength / sizeof(attributes);
+    const instanceCount = instances.byteLength / sizeOfAttributes;
     for (let i = 0; i < instanceCount; i += DEFAULT_BATCH_BUFFER_ELEMENTS) {
       const batchElements = Math.min(instanceCount - i, DEFAULT_BATCH_BUFFER_ELEMENTS);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances, i * sizeof(attributes) / Float32Array.BYTES_PER_ELEMENT, batchElements * sizeof(attributes) / Float32Array.BYTES_PER_ELEMENT);
-      
-      // draw
-      const primitiveType = gl.TRIANGLE_STRIP;
-      const offset = 0;
-      const count = 4;
-      gl.drawArraysInstanced(primitiveType, offset, count, batchElements); // todo use mat3x3 instead (apparently same performance but lower memory)
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instances, i * stride, batchElements * stride);
+      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, batchElements);
     }
   };
 }

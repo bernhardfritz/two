@@ -127,6 +127,7 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
       ['a_texture_matrix', 'mat4'],
       ['a_tint_color', 'vec4'],
     ]);
+    const stride = sizeof(attributes) / Float32Array.BYTES_PER_ELEMENT;
     const render = renderer(gl, attributes);
     let previousTime = 0;
     const frameRequestCallback: FrameRequestCallback = (time) => {
@@ -134,7 +135,7 @@ export async function game(context: Context, moduleObject: WebAssembly.Module) {
       const ptr = Number(slice >> 32n);
       const len = Number(slice & 0xffffffffn);
       const bytes = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer, ptr, len);
-      const instances = new Float32Array(bytes.buffer, bytes.byteOffset, (sizeof(attributes) / 4) * len);
+      const instances = new Float32Array(bytes.buffer, bytes.byteOffset, len * stride);
       render(instances);
       previousTime = time;
       requestAnimationFrame(frameRequestCallback);
