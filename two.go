@@ -4,12 +4,14 @@ import (
 	"io"
 	"io/fs"
 	"unsafe"
+
+	linmath "github.com/bernhardfritz/two/internal/linmath"
 )
 
 type perInstanceData struct {
-	modelMatrix   mat4x4
-	textureMatrix mat4x4
-	tintColor     vec4
+	modelMatrix   linmath.Mat4
+	textureMatrix linmath.Mat4
+	tintColor     linmath.Vec4
 }
 
 type context struct {
@@ -19,8 +21,8 @@ type context struct {
 	update           func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int)
 	width            float64
 	height           float64
-	tintColor        vec4
-	transformMatrix  mat4x4
+	tintColor        linmath.Vec4
+	transformMatrix  linmath.Mat4
 }
 
 var ctx context
@@ -65,27 +67,9 @@ func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHe
 	instance := perInstanceData{
 		tintColor: ctx.tintColor,
 	}
-	{
-		var t1 mat4x4
-		mat4x4_translate(&t1, -0.5, -0.5, 0) // -0.5 to compensate because quad is offset for the purpose of dual usage as uv coordinates
-		var s mat4x4
-		mat4x4_scale_aniso(&s, t1, float32(dWidth), float32(dHeight), 1)
-		var t2 mat4x4
-		mat4x4_translate(&t2, 0.5+float32(dx), 0.5+float32(dy), 0)
-		var trs mat4x4
-		mat4x4_mul(&trs, t2, s)
-		mat4x4_mul(&instance.modelMatrix, ctx.transformMatrix, trs)
-	}
-	{
-		var identity mat4x4
-		mat4x4_identity(&identity)
-		var s mat4x4
-		mat4x4_scale_aniso(&s, identity, float32(sWidth/ctx.maxTextureWidth), float32(sHeight/ctx.maxTextureHeight), 1)
-		var t mat4x4
-		mat4x4_translate(&t, float32(sx/ctx.maxTextureWidth), float32(sy/ctx.maxTextureHeight), 0)
-		mat4x4_mul(&instance.textureMatrix, t, s)
-		instance.textureMatrix[3][3] = float32(texture.id + 1) // add 1 because first texture is 1x1 white pixel
-	}
+	instance.modelMatrix = ctx.transformMatrix.Mul(linmath.NewTranslate(0.5+float32(dx), 0.5+float32(dy), 0).Mul(linmath.NewTranslate(-0.5, -0.5, 0).ScaleAniso(float32(dWidth), float32(dHeight), 1)))
+	instance.textureMatrix = linmath.NewTranslate(float32(sx/ctx.maxTextureWidth), float32(sy/ctx.maxTextureHeight), 0).Mul(linmath.NewScale(float32(sWidth/ctx.maxTextureWidth), float32(sHeight/ctx.maxTextureHeight), 1))
+	instance.textureMatrix[3][3] = float32(texture.id + 1) // add 1 because first texture is 1x1 white pixel
 	ctx.instances = append(ctx.instances, instance)
 }
 
@@ -96,17 +80,16 @@ func DrawRectangle(x, y, width, height float64) {
 
 // Clears the background with color specified by red, green, blue and alpha channel values between 0 and 255.
 func ClearBackground(r, g, b, a uint8) {
-	var tmp mat4x4
-	mat4x4_dup(&tmp, ctx.transformMatrix)
-	mat4x4_identity(&ctx.transformMatrix)
+	tmp := ctx.transformMatrix
+	ctx.transformMatrix = linmath.NewIdentity()
 	DrawRectangle(0, 0, ctx.width, ctx.height)
-	mat4x4_dup(&ctx.transformMatrix, tmp)
-	ctx.instances[len(ctx.instances)-1].tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+	ctx.transformMatrix = tmp
+	ctx.instances[len(ctx.instances)-1].tintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 // Sets the color to tint textures with specified by red, green, blue and alpha channel values between 0 and 255.
 func SetTintColor(r, g, b, a uint8) {
-	ctx.tintColor = vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+	ctx.tintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 // Sets the matrix to transform all following instances by.
@@ -200,8 +183,8 @@ func SetGameLoop(update func(deltaTime, width, height, mouseX, mouseY float64, m
 func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
 	ctx.width = width
 	ctx.height = height
-	ctx.tintColor = vec4{1, 1, 1, 1}
-	mat4x4_identity(&ctx.transformMatrix)
+	ctx.tintColor = linmath.Vec4{1, 1, 1, 1}
+	ctx.transformMatrix = linmath.NewIdentity()
 	ctx.update(deltaTime, width, height, mouseX, mouseY, int(mouseButtons))
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
 	ctx.instances = ctx.instances[:0]
