@@ -74,7 +74,7 @@ jobs:
           pattern: '!dist'
       - name: Generate index.html
         run: |
-          index_html=$(go run index/index.go two/)
+          index_html=$(go run internal/index/main.go two/)
           echo "$index_html" > two/index.html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
