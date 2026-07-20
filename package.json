@@ -9,15 +9,19 @@
     ".": {
       "import": "./dist/two.js"
     },
-    "./rollup-plugin-go-wasm": {
-      "import": "./dist/rollup-plugin-go-wasm"
+    "./vite-plugin": {
+      "import": "./dist/vite-plugin-two.js"
     }
   },
   "scripts": {
-    "build": "tsc && vite build && cp rollup-plugin-go-wasm.js dist/"
+    "build": "tsc && vite build && cp vite-plugin-two.js dist/"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
     "vite": "^7.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bernhardfritz/two.git"
   }
 }

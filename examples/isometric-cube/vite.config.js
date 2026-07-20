@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
-import goWasm from '@bernhardfritz/two/rollup-plugin-go-wasm';
+import two from '@bernhardfritz/two/vite-plugin';
 
 export default defineConfig({
   plugins: [
-    goWasm(),
+    two(),
   ],
 });
