@@ -4,11 +4,11 @@ import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
-export default function() {
+export default function two() {
   let config;
 
   return {
-    name: 'rolldown-plugin-go-wasm',
+    name: 'vite-plugin-two',
     configResolved(resolvedConfig) {
       config = resolvedConfig;
     },
