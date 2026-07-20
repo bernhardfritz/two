@@ -1,3 +1,4 @@
+// A simple 2D graphics library
 package two
 
 import (
@@ -5,27 +6,27 @@ import (
 	"io/fs"
 	"unsafe"
 
-	linmath "github.com/bernhardfritz/two/internal/linmath"
+	"github.com/bernhardfritz/two/internal/linmath"
+	"github.com/bernhardfritz/two/internal/state"
 )
 
-type perInstanceData struct {
-	modelMatrix   linmath.Mat4
-	textureMatrix linmath.Mat4
-	tintColor     linmath.Vec4
-}
+// milliseconds it took to draw last frame
+var DeltaTime float64
 
-type context struct {
-	instances        []perInstanceData
-	maxTextureWidth  float64
-	maxTextureHeight float64
-	update           func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int)
-	width            float64
-	height           float64
-	tintColor        linmath.Vec4
-	transformMatrix  linmath.Mat4
-}
+// clientWidth of the canvas
+var Width float64
 
-var ctx context
+// clientHeight of the canvas
+var Height float64
+
+// X coordinate of the mouse pointer
+var MouseX float64
+
+// Y coordinate of the mouse pointer
+var MouseY float64
+
+// buttons being pressed (if any)
+var MouseButtons int
 
 // Texture, tex data stored in GPU memory (VRAM)
 type Texture struct {
@@ -38,11 +39,11 @@ func textureFromBytes(bytes []byte) Texture {
 	id := int(littleEndianToUint32(bytes[0:4]))
 	width := float64(littleEndianToUint32(bytes[4:8]))
 	height := float64(littleEndianToUint32(bytes[8:12]))
-	if width > ctx.maxTextureWidth {
-		ctx.maxTextureWidth = width
+	if width > state.MaxTextureWidth {
+		state.MaxTextureWidth = width
 	}
-	if height > ctx.maxTextureHeight {
-		ctx.maxTextureHeight = height
+	if height > state.MaxTextureHeight {
+		state.MaxTextureHeight = height
 	}
 
 	return Texture{
@@ -64,13 +65,13 @@ func DrawTexture4f(texture Texture, dx, dy, dWidth, dHeight float64) {
 
 // Draws a texture of width dWidth and height dHeight onto the canvas where dx and dy specify the coordinates of the top-left corner and parameters sx, sy, sWidth and sHeight define a texture subsection to read from.
 func DrawTexture8f(texture Texture, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight float64) {
-	instance := perInstanceData{
-		tintColor: ctx.tintColor,
+	instance := state.PerInstanceData{
+		TintColor: state.TintColor,
 	}
-	instance.modelMatrix = ctx.transformMatrix.Mul(linmath.NewTranslate(0.5+float32(dx), 0.5+float32(dy), 0).Mul(linmath.NewTranslate(-0.5, -0.5, 0).ScaleAniso(float32(dWidth), float32(dHeight), 1)))
-	instance.textureMatrix = linmath.NewTranslate(float32(sx/ctx.maxTextureWidth), float32(sy/ctx.maxTextureHeight), 0).Mul(linmath.NewScale(float32(sWidth/ctx.maxTextureWidth), float32(sHeight/ctx.maxTextureHeight), 1))
-	instance.textureMatrix[3][3] = float32(texture.id + 1) // add 1 because first texture is 1x1 white pixel
-	ctx.instances = append(ctx.instances, instance)
+	instance.ModelMatrix = state.TransformMatrix.Mul(linmath.NewTranslate(0.5+float32(dx), 0.5+float32(dy), 0).Mul(linmath.NewTranslate(-0.5, -0.5, 0).ScaleAniso(float32(dWidth), float32(dHeight), 1)))
+	instance.TextureMatrix = linmath.NewTranslate(float32(sx/state.MaxTextureWidth), float32(sy/state.MaxTextureHeight), 0).Mul(linmath.NewScale(float32(sWidth/state.MaxTextureWidth), float32(sHeight/state.MaxTextureHeight), 1))
+	instance.TextureMatrix[3][3] = float32(texture.id + 1) // add 1 because first texture is 1x1 white pixel
+	state.Instances = append(state.Instances, instance)
 }
 
 // Draws a color-filled rectangle
@@ -80,26 +81,26 @@ func DrawRectangle(x, y, width, height float64) {
 
 // Clears the background with color specified by red, green, blue and alpha channel values between 0 and 255.
 func ClearBackground(r, g, b, a uint8) {
-	tmp := ctx.transformMatrix
-	ctx.transformMatrix = linmath.NewIdentity()
-	DrawRectangle(0, 0, ctx.width, ctx.height)
-	ctx.transformMatrix = tmp
-	ctx.instances[len(ctx.instances)-1].tintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+	tmp := state.TransformMatrix
+	state.TransformMatrix = linmath.NewIdentity()
+	DrawRectangle(0, 0, Width, Height)
+	state.TransformMatrix = tmp
+	state.Instances[len(state.Instances)-1].TintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 // Sets the color to tint textures with specified by red, green, blue and alpha channel values between 0 and 255.
 func SetTintColor(r, g, b, a uint8) {
-	ctx.tintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
+	state.TintColor = linmath.Vec4{float32(r) / 255, float32(g) / 255, float32(b) / 255, float32(a) / 255}
 }
 
 // Sets the matrix to transform all following instances by.
 func SetTransform(a, b, c, d, e, f float64) {
-	ctx.transformMatrix[0][0] = float32(a)
-	ctx.transformMatrix[0][1] = float32(b)
-	ctx.transformMatrix[1][0] = float32(c)
-	ctx.transformMatrix[1][1] = float32(d)
-	ctx.transformMatrix[3][0] = float32(e)
-	ctx.transformMatrix[3][1] = float32(f)
+	state.TransformMatrix[0][0] = float32(a)
+	state.TransformMatrix[0][1] = float32(b)
+	state.TransformMatrix[1][0] = float32(c)
+	state.TransformMatrix[1][1] = float32(d)
+	state.TransformMatrix[3][0] = float32(e)
+	state.TransformMatrix[3][1] = float32(f)
 }
 
 //export writeFile
@@ -174,20 +175,24 @@ func DrawText(font Font, text string, x, y float64, size int) {
 }
 
 // Sets the function to call when it's time to update your game for the next repaint
-func SetGameLoop(update func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int)) {
-	ctx.update = update
+func SetGameLoop(gameLoop func()) {
+	state.GameLoop = gameLoop
 	select {}
 }
 
-//export update
-func update(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
-	ctx.width = width
-	ctx.height = height
-	ctx.tintColor = linmath.Vec4{1, 1, 1, 1}
-	ctx.transformMatrix = linmath.NewIdentity()
-	ctx.update(deltaTime, width, height, mouseX, mouseY, int(mouseButtons))
-	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(ctx.instances))))<<32 | uint64(len(ctx.instances))
-	ctx.instances = ctx.instances[:0]
+//export gameLoop
+func gameLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
+	DeltaTime = deltaTime
+	Width = width
+	Height = height
+	MouseX = mouseX
+	MouseY = mouseY
+	MouseButtons = int(mouseButtons)
+	state.TintColor = linmath.Vec4{1, 1, 1, 1}
+	state.TransformMatrix = linmath.NewIdentity()
+	state.GameLoop()
+	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(state.Instances))))<<32 | uint64(len(state.Instances))
+	state.Instances = state.Instances[:0]
 
 	return ret
 }
