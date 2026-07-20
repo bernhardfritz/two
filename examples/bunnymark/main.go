@@ -37,13 +37,13 @@ func main() {
 	font := two.LoadFont("32px monospace")
 	bunnies := make([]*Bunny, 0)
 
-	update := func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int) {
-		if mouseButtons == 1 {
+	gameLoop := func() {
+		if two.MouseButtons == 1 {
 			// Create more bunnies
 			for i := 0; i < 100; i++ {
 				b := &Bunny{}
-				b.Position.X = mouseX
-				b.Position.Y = mouseY
+				b.Position.X = two.MouseX
+				b.Position.Y = two.MouseY
 				b.Speed.X = randomFloat64(-250, 250) / 60
 				b.Speed.Y = randomFloat64(-250, 250) / 60
 				b.Color.R = uint8(randomFloat64(50, 240))
@@ -60,11 +60,11 @@ func main() {
 			b.Position.X += b.Speed.X
 			b.Position.Y += b.Speed.Y
 
-			if ((b.Position.X + texture.Width/2) > width) || ((b.Position.X + texture.Width/2) < 0) {
+			if ((b.Position.X + texture.Width/2) > two.Width) || ((b.Position.X + texture.Width/2) < 0) {
 				b.Speed.X *= -1
 			}
 
-			if ((b.Position.Y + texture.Height/2) > height) || ((b.Position.Y + texture.Height/2 - 40) < 0) {
+			if ((b.Position.Y + texture.Height/2) > two.Height) || ((b.Position.Y + texture.Height/2 - 40) < 0) {
 				b.Speed.Y *= -1
 			}
 		}
@@ -75,15 +75,15 @@ func main() {
 			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}
 		two.SetTintColor(0, 0, 0, 255)
-		two.DrawRectangle(0, 0, width, 40)
+		two.DrawRectangle(0, 0, two.Width, 40)
 		two.SetTintColor(0, 228, 48, 255)
 		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
 		two.SetTintColor(190, 33, 55, 255)
 		two.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10, 20)
-		DrawFPS(font, deltaTime, 10, 10, 20)
+		DrawFPS(font, 10, 10, 20)
 	}
 
-	two.SetGameLoop(update)
+	two.SetGameLoop(gameLoop)
 }
 
 func randomFloat64(inclusive, exclusive float64) float64 {
@@ -95,13 +95,13 @@ var index int
 var history [FPS_CAPTURE_FRAMES_COUNT]float64
 var sum float64
 
-func GetFPS(deltaTime float64) int {
-	if deltaTime <= 0 {
+func GetFPS() int {
+	if two.DeltaTime <= 0 {
 		return 0
 	}
 
 	// 1. Convert ms to seconds
-	seconds := deltaTime / 1000.0
+	seconds := two.DeltaTime / 1000.0
 
 	// 2. Update the rolling sum by removing the oldest value and adding the new one
 	sum -= history[index]
@@ -120,8 +120,8 @@ func GetFPS(deltaTime float64) int {
 	return int(math.Round(FPS_CAPTURE_FRAMES_COUNT / sum))
 }
 
-func DrawFPS(font two.Font, deltaTime, x, y float64, size int) {
-	fps := GetFPS(deltaTime)
+func DrawFPS(font two.Font, x, y float64, size int) {
+	fps := GetFPS()
 	if 15 <= fps && fps < 30 {
 		two.SetTintColor(255, 161, 0, 255)
 	} else if fps < 15 {

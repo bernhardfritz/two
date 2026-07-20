@@ -30,11 +30,11 @@ func main() {
 	end := [2]int{}
 	path := [][2]int{}
 	var time float64 = 0
-	update := func(deltaTime, width, height, mouseX, mouseY float64, mouseButtons int) {
-		time += deltaTime
-		dim := height / rows
-		endX := int(mouseX / dim)
-		endY := int(mouseY / dim)
+	gameLoop := func() {
+		time += two.DeltaTime
+		dim := two.Height / rows
+		endX := int(two.MouseX / dim)
+		endY := int(two.MouseY / dim)
 		if endX != end[0] || endY != end[1] {
 			end = [2]int{endX, endY}
 			if !grid[end[1]*cols+end[0]] {
@@ -65,5 +65,5 @@ func main() {
 		}
 	}
 
-	two.SetGameLoop(update)
+	two.SetGameLoop(gameLoop)
 }

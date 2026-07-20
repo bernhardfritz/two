@@ -1,4 +1,4 @@
-package two
+package linmath
 
 type Vec4 [4]float32
 type Mat4 [4]Vec4
