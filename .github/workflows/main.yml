@@ -62,9 +62,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
-        with:
-          go-version: 1.25.5
       - name: Create directory
         run: mkdir two
       - name: Download examples
@@ -72,10 +69,6 @@ jobs:
         with:
           path: two/
           pattern: '!dist'
-      - name: Generate index.html
-        run: |
-          index_html=$(go run internal/index/main.go two/)
-          echo "$index_html" > two/index.html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
