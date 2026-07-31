@@ -6,7 +6,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/bernhardfritz/two"
+	fl "github.com/bernhardfritz/flatland"
 )
 
 const maxBatchElements = 8192
@@ -29,21 +29,21 @@ type Bunny struct {
 var ASSETS embed.FS
 
 func init() {
-	two.AddFileSystem(ASSETS)
+	fl.AddFileSystem(ASSETS)
 }
 
 func main() {
-	texture := two.LoadTexture("resources/wabbit_alpha.png")
-	font := two.LoadFont("32px monospace")
+	texture := fl.LoadTexture("resources/wabbit_alpha.png")
+	font := fl.LoadFont("32px monospace")
 	bunnies := make([]*Bunny, 0)
 
-	gameLoop := func() {
-		if two.MouseButtons == 1 {
+	animate := func() {
+		if fl.MouseButtons == 1 {
 			// Create more bunnies
 			for i := 0; i < 100; i++ {
 				b := &Bunny{}
-				b.Position.X = two.MouseX
-				b.Position.Y = two.MouseY
+				b.Position.X = fl.MouseX
+				b.Position.Y = fl.MouseY
 				b.Speed.X = randomFloat64(-250, 250) / 60
 				b.Speed.Y = randomFloat64(-250, 250) / 60
 				b.Color.R = uint8(randomFloat64(50, 240))
@@ -60,30 +60,30 @@ func main() {
 			b.Position.X += b.Speed.X
 			b.Position.Y += b.Speed.Y
 
-			if ((b.Position.X + texture.Width/2) > two.Width) || ((b.Position.X + texture.Width/2) < 0) {
+			if ((b.Position.X + texture.Width/2) > fl.Width) || ((b.Position.X + texture.Width/2) < 0) {
 				b.Speed.X *= -1
 			}
 
-			if ((b.Position.Y + texture.Height/2) > two.Height) || ((b.Position.Y + texture.Height/2 - 40) < 0) {
+			if ((b.Position.Y + texture.Height/2) > fl.Height) || ((b.Position.Y + texture.Height/2 - 40) < 0) {
 				b.Speed.Y *= -1
 			}
 		}
 
-		two.ClearBackground(255, 255, 255, 255)
+		fl.ClearBackground(255, 255, 255, 255)
 		for _, b := range bunnies {
-			two.SetTintColor(b.Color.R, b.Color.G, b.Color.B, b.Color.A)
-			two.DrawTexture2f(texture, b.Position.X, b.Position.Y)
+			fl.SetTintColor(b.Color.R, b.Color.G, b.Color.B, b.Color.A)
+			fl.DrawTexture2f(texture, b.Position.X, b.Position.Y)
 		}
-		two.SetTintColor(0, 0, 0, 255)
-		two.DrawRectangle(0, 0, two.Width, 40)
-		two.SetTintColor(0, 228, 48, 255)
-		two.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
-		two.SetTintColor(190, 33, 55, 255)
-		two.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10, 20)
+		fl.SetTintColor(0, 0, 0, 255)
+		fl.DrawRectangle(0, 0, fl.Width, 40)
+		fl.SetTintColor(0, 228, 48, 255)
+		fl.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
+		fl.SetTintColor(190, 33, 55, 255)
+		fl.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10, 20)
 		DrawFPS(font, 10, 10, 20)
 	}
 
-	two.SetGameLoop(gameLoop)
+	fl.SetAnimationLoop(animate)
 }
 
 func randomFloat64(inclusive, exclusive float64) float64 {
@@ -96,12 +96,12 @@ var history [FPS_CAPTURE_FRAMES_COUNT]float64
 var sum float64
 
 func GetFPS() int {
-	if two.DeltaTime <= 0 {
+	if fl.DeltaTime <= 0 {
 		return 0
 	}
 
 	// 1. Convert ms to seconds
-	seconds := two.DeltaTime / 1000.0
+	seconds := fl.DeltaTime / 1000.0
 
 	// 2. Update the rolling sum by removing the oldest value and adding the new one
 	sum -= history[index]
@@ -120,14 +120,14 @@ func GetFPS() int {
 	return int(math.Round(FPS_CAPTURE_FRAMES_COUNT / sum))
 }
 
-func DrawFPS(font two.Font, x, y float64, size int) {
+func DrawFPS(font fl.Font, x, y float64, size int) {
 	fps := GetFPS()
 	if 15 <= fps && fps < 30 {
-		two.SetTintColor(255, 161, 0, 255)
+		fl.SetTintColor(255, 161, 0, 255)
 	} else if fps < 15 {
-		two.SetTintColor(230, 41, 55, 255)
+		fl.SetTintColor(230, 41, 55, 255)
 	} else {
-		two.SetTintColor(0, 158, 47, 255)
+		fl.SetTintColor(0, 158, 47, 255)
 	}
-	two.DrawText(font, fmt.Sprintf("%d FPS", fps), x, y, size)
+	fl.DrawText(font, fmt.Sprintf("%d FPS", fps), x, y, size)
 }

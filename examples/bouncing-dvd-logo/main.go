@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"math/rand/v2"
 
-	"github.com/bernhardfritz/two"
+	fl "github.com/bernhardfritz/flatland"
 )
 
 type Vec2 struct {
@@ -21,26 +21,26 @@ func randomColor() color.RGBA {
 var ASSETS embed.FS
 
 func init() {
-	two.AddFileSystem(ASSETS)
+	fl.AddFileSystem(ASSETS)
 }
 
 func main() {
-	dvdLogo := two.LoadTexture("resources/DVD_video_logo.png")
+	dvdLogo := fl.LoadTexture("resources/DVD_video_logo.png")
 	position := Vec2{0, 0}
 	velocity := Vec2{0.2, 0.2}
 	color := randomColor()
 
-	gameLoop := func() {
-		two.ClearBackground(0, 0, 0, 255)
-		two.SetTintColor(color.R, color.G, color.B, color.A)
-		two.DrawTexture2f(dvdLogo, position.X, position.Y)
+	animate := func() {
+		fl.ClearBackground(0, 0, 0, 255)
+		fl.SetTintColor(color.R, color.G, color.B, color.A)
+		fl.DrawTexture2f(dvdLogo, position.X, position.Y)
 
-		position.X += velocity.X * two.DeltaTime
-		position.Y += velocity.Y * two.DeltaTime
+		position.X += velocity.X * fl.DeltaTime
+		position.Y += velocity.Y * fl.DeltaTime
 
-		if position.X+dvdLogo.Width >= two.Width {
+		if position.X+dvdLogo.Width >= fl.Width {
 			velocity.X = -velocity.X
-			position.X = two.Width - dvdLogo.Width
+			position.X = fl.Width - dvdLogo.Width
 			color = randomColor()
 		} else if position.X <= 0 {
 			velocity.X = -velocity.X
@@ -48,9 +48,9 @@ func main() {
 			color = randomColor()
 		}
 
-		if position.Y+dvdLogo.Height >= two.Height {
+		if position.Y+dvdLogo.Height >= fl.Height {
 			velocity.Y = -velocity.Y
-			position.Y = two.Height - dvdLogo.Height
+			position.Y = fl.Height - dvdLogo.Height
 			color = randomColor()
 		} else if position.Y <= 0 {
 			velocity.Y = -velocity.Y
@@ -59,5 +59,5 @@ func main() {
 		}
 	}
 
-	two.SetGameLoop(gameLoop)
+	fl.SetAnimationLoop(animate)
 }

@@ -1,3 +1,3 @@
-module github.com/bernhardfritz/two
+module github.com/bernhardfritz/flatland
 
 go 1.25.5

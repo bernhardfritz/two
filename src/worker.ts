@@ -1,4 +1,4 @@
-import { game, type Context } from './game.ts';
+import { bootstrap, type Context } from './bootstrap.ts';
 
 const context = {} as Context;
 
@@ -19,7 +19,7 @@ onmessage = (evt) => {
         mouseY: 0,
         mouseButtons: 0,
       })
-      game(context, evt.data.moduleObject);
+      bootstrap(context, evt.data.moduleObject);
       break;
     case 'resize':
       context.gl.canvas.clientWidth = evt.data.clientWidth;

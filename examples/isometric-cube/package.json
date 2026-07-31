@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bernhardfritz/two": "file:../../"
+    "@bernhardfritz/flatland": "file:../../"
   },
   "devDependencies": {
     "vite": "^7.3.1"

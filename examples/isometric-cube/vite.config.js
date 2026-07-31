@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
-import two from '@bernhardfritz/two/vite-plugin';
+import flatland from '@bernhardfritz/flatland/vite-plugin';
 
 export default defineConfig({
   plugins: [
-    two(),
+    flatland(),
   ],
 });

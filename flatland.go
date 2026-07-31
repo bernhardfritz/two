@@ -1,13 +1,13 @@
 // A simple 2D graphics library
-package two
+package flatland
 
 import (
 	"io"
 	"io/fs"
 	"unsafe"
 
-	"github.com/bernhardfritz/two/internal/linmath"
-	"github.com/bernhardfritz/two/internal/state"
+	"github.com/bernhardfritz/flatland/internal/linmath"
+	"github.com/bernhardfritz/flatland/internal/state"
 )
 
 // milliseconds it took to draw last frame
@@ -144,6 +144,7 @@ func LoadTexture(fileName string) Texture {
 	return textureFromBytes(bytes[:])
 }
 
+// Font, struct literals can be created with [LoadFont] and passed to [DrawText]
 type Font struct {
 	texture        Texture
 	size           float64
@@ -174,14 +175,14 @@ func DrawText(font Font, text string, x, y float64, size int) {
 	}
 }
 
-// Sets the function to call when it's time to update your game for the next repaint
-func SetGameLoop(gameLoop func()) {
-	state.GameLoop = gameLoop
+// Sets the function to call when it's time to update your animation for the next repaint
+func SetAnimationLoop(animate func()) {
+	state.AnimationLoop = animate
 	select {}
 }
 
-//export gameLoop
-func gameLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
+//export animationLoop
+func animationLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
 	DeltaTime = deltaTime
 	Width = width
 	Height = height
@@ -190,7 +191,7 @@ func gameLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) ui
 	MouseButtons = int(mouseButtons)
 	state.TintColor = linmath.Vec4{1, 1, 1, 1}
 	state.TransformMatrix = linmath.NewIdentity()
-	state.GameLoop()
+	state.AnimationLoop()
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(state.Instances))))<<32 | uint64(len(state.Instances))
 	state.Instances = state.Instances[:0]
 

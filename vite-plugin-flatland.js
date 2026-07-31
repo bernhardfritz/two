@@ -4,11 +4,11 @@ import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
-export default function two() {
+export default function flatland() {
   let config;
 
   return {
-    name: 'vite-plugin-two',
+    name: 'vite-plugin-flatland',
     configResolved(resolvedConfig) {
       config = resolvedConfig;
     },

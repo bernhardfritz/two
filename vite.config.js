@@ -7,10 +7,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/two.ts'),
-      name: 'two',
+      entry: resolve(__dirname, 'src/flatland.ts'),
+      name: 'flatland',
       // the proper extensions will be added
-      fileName: 'two',
+      fileName: 'flatland',
       formats: ['es'],
     },
     target: 'esnext',
