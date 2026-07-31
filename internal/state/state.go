@@ -1,6 +1,6 @@
 package state
 
-import "github.com/bernhardfritz/two/internal/linmath"
+import "github.com/bernhardfritz/flatland/internal/linmath"
 
 type PerInstanceData struct {
 	ModelMatrix   linmath.Mat4
@@ -12,7 +12,7 @@ var (
 	Instances        []PerInstanceData
 	MaxTextureWidth  float64
 	MaxTextureHeight float64
-	GameLoop         func()
+	AnimationLoop    func()
 	TintColor        linmath.Vec4
 	TransformMatrix  linmath.Mat4
 )

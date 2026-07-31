@@ -1,4 +1,4 @@
-import type { Context } from './game.ts';
+import type { Context } from './bootstrap.ts';
 import type { AugmentedWebGL2RenderingContext } from './renderer.ts';
 import MyWorker from './worker.ts?worker&inline';
 
@@ -10,7 +10,7 @@ function withMiddleware<T, U>(middleware: (t: T, next: (u: U) => void) => void):
   }
 }
 
-export function two(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Module>, options?: WebGLContextAttributes) {
+export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Module>, options?: WebGLContextAttributes) {
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
@@ -108,8 +108,8 @@ export function two(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Module>
     canvas.addEventListener('touchend', createTouchEndHandler(({ clientX, clientY, buttons }) => {
       Object.assign(context, { mouseX: clientX, mouseY: clientY, mouseButtons: buttons });
     }));
-    Promise.all([import('./game.ts'), wasm]).then(([{ game }, moduleObject]) => {
-      game(context, moduleObject);
+    Promise.all([import('./bootstrap.ts'), wasm]).then(([{ bootstrap }, moduleObject]) => {
+      bootstrap(context, moduleObject);
     });
   }
 }

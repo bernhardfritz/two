@@ -3,8 +3,8 @@ package main
 import (
 	"math/rand/v2"
 
-	"github.com/bernhardfritz/two"
-	"github.com/bernhardfritz/two/examples/astar/astar"
+	fl "github.com/bernhardfritz/flatland"
+	"github.com/bernhardfritz/flatland/examples/astar/astar"
 )
 
 func randomGrid(grid []bool, cols int) {
@@ -30,25 +30,25 @@ func main() {
 	end := [2]int{}
 	path := [][2]int{}
 	var time float64 = 0
-	gameLoop := func() {
-		time += two.DeltaTime
-		dim := two.Height / rows
-		endX := int(two.MouseX / dim)
-		endY := int(two.MouseY / dim)
+	animate := func() {
+		time += fl.DeltaTime
+		dim := fl.Height / rows
+		endX := int(fl.MouseX / dim)
+		endY := int(fl.MouseY / dim)
 		if endX != end[0] || endY != end[1] {
 			end = [2]int{endX, endY}
 			if !grid[end[1]*cols+end[0]] {
 				path = astar.FindPath(grid[:], cols, start, end)
 			}
 		}
-		two.ClearBackground(255, 255, 255, 255)
-		two.SetTintColor(0, 0, 0, 255)
+		fl.ClearBackground(255, 255, 255, 255)
+		fl.SetTintColor(0, 0, 0, 255)
 		for row := 0; row < rows; row++ {
 			for col := 0; col < cols; col++ {
 				if !grid[row*cols+col] {
 					continue
 				}
-				two.DrawRectangle(float64(col)*dim, float64(row)*dim, dim, dim)
+				fl.DrawRectangle(float64(col)*dim, float64(row)*dim, dim, dim)
 			}
 		}
 		if len(path) == 0 {
@@ -57,13 +57,13 @@ func main() {
 		marked := (int(time/25) % 1000) % len(path)
 		for index, position := range path {
 			if index == marked {
-				two.SetTintColor(255, 255, 0, 255)
+				fl.SetTintColor(255, 255, 0, 255)
 			} else {
-				two.SetTintColor(0, 255, 255, 255)
+				fl.SetTintColor(0, 255, 255, 255)
 			}
-			two.DrawRectangle(float64(position[0])*dim, float64(position[1])*dim, dim, dim)
+			fl.DrawRectangle(float64(position[0])*dim, float64(position[1])*dim, dim, dim)
 		}
 	}
 
-	two.SetGameLoop(gameLoop)
+	fl.SetAnimationLoop(animate)
 }

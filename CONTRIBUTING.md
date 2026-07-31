@@ -3,7 +3,7 @@
 ## Build image
 
 ```bash
-docker build -t two .
+docker build -t flatland .
 ```
 
 ## Build library and example
@@ -11,7 +11,7 @@ docker build -t two .
 At some point this step should be optional. For now this needs to be done manually once:
 
 ```bash
-docker run -it --rm -v $PWD:/app --workdir /app two sh
+docker run -it --rm -v $PWD:/app --workdir /app flatland sh
 npm install
 npm run build
 cd examples/bunnymark/
@@ -22,7 +22,7 @@ npm install
 ## Start dev server
 
 ```bash
-docker run -it --rm -p 5173:5173 -v $PWD:/app --workdir /app/examples/bunnymark two
+docker run -it --rm -p 5173:5173 -v $PWD:/app --workdir /app/examples/bunnymark flatland
 ```
 
 Open in browser: http://localhost:5173/

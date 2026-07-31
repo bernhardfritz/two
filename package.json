@@ -1,20 +1,20 @@
 {
-  "name": "@bernhardfritz/two",
+  "name": "@bernhardfritz/flatland",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "files": ["dist"],
-  "module": "./dist/two.js",
+  "module": "./dist/flatland.js",
   "exports": {
     ".": {
-      "import": "./dist/two.js"
+      "import": "./dist/flatland.js"
     },
     "./vite-plugin": {
-      "import": "./dist/vite-plugin-two.js"
+      "import": "./dist/vite-plugin-flatland.js"
     }
   },
   "scripts": {
-    "build": "tsc && vite build && cp vite-plugin-two.js dist/"
+    "build": "tsc && vite build && cp vite-plugin-flatland.js dist/"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
@@ -22,6 +22,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bernhardfritz/two.git"
+    "url": "https://github.com/bernhardfritz/flatland.git"
   }
 }

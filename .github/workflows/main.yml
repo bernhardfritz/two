@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: npm --prefix "./examples/${{ matrix.example }}" ci
       - name: Build example
-        run: npm --prefix "./examples/${{ matrix.example }}" run build -- --base /two/${{ matrix.example }}/
+        run: npm --prefix "./examples/${{ matrix.example }}" run build -- --base /flatland/${{ matrix.example }}/
       - name: Upload example
         uses: actions/upload-artifact@v7
         with:
@@ -63,14 +63,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Create directory
-        run: mkdir two
+        run: mkdir flatland
       - name: Download examples
         uses: actions/download-artifact@v8
         with:
-          path: two/
+          path: flatland/
           pattern: '!dist'
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./two/
+          publish_dir: ./flatland/
