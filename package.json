@@ -1,9 +1,20 @@
 {
   "name": "@bernhardfritz/flatland",
-  "private": true,
-  "version": "0.0.0",
+  "description": "A simple 2D graphics library",
+  "keywords": [
+    "2d",
+    "go",
+    "webassembly",
+    "webgl2"
+  ],
+  "version": "0.1.0",
+  "homepage": "https://pkg.go.dev/github.com/bernhardfritz/flatland",
+  "bugs": "https://github.com/bernhardfritz/flatland/issues",
+  "license": "MIT",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "module": "./dist/flatland.js",
   "exports": {
     ".": {
@@ -22,6 +33,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bernhardfritz/flatland.git"
+    "url": "git+https://github.com/bernhardfritz/flatland.git"
   }
 }
