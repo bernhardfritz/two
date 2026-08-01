@@ -1,8 +1,10 @@
 # flatland
 
-<img src="./gamer.svg" alt="Gopher holding a gamepad" width="128" align="right">
+<a href="https://pkg.go.dev/github.com/bernhardfritz/flatland"><img src="./gamer.svg" alt="Gopher holding a gamepad" width="128" align="right"></a>
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/bernhardfritz/flatland.svg)](https://pkg.go.dev/github.com/bernhardfritz/flatland)
+[![NPM Version](https://img.shields.io/npm/v/%40bernhardfritz%2Fflatland)](https://www.npmjs.com/package/@bernhardfritz/flatland)
+
 
 2D graphics library for Go. Targets the web using WASM and WebGL. Offers containerized development setup.\
 The API is minimalistic by design. Familiarity with web technologies is not required to use this library.
@@ -11,7 +13,7 @@ The API is minimalistic by design. Familiarity with web technologies is not requ
 
 ## Usage
 
-This code produces a bouncing DVD logo. The main function loads an embedded texture and initializes some variables. An animation function is passed to `flatland.SetAnimationLoop()` which blocks the main thread and calls the function in an endless loop once per frame. The animation loop is where we render and update the scene. In this case we clear the background with a black color and set a tint color that is applied when drawing textures or rectangles. The remaining code ensures the bouncing logo stays within the bounds of the frame producing the iconic 2000s DVD player screensaver.
+This code produces a bouncing DVD logo. The main function loads an embedded texture and initializes some variables. An animation function is passed to `fl.SetAnimationLoop()` which blocks the main thread and calls the function in an endless loop once per frame. The animation loop is where we render and update the scene. In this case we clear the background with a black color and set a tint color that is applied when drawing textures or rectangles. The remaining code ensures the bouncing logo stays within the bounds of the frame producing the iconic 2000s DVD player screensaver.
 
 ```go
 package main
