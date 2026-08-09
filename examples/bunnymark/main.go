@@ -34,7 +34,7 @@ func init() {
 
 func main() {
 	texture := fl.LoadTexture("resources/wabbit_alpha.png")
-	font := fl.LoadFont("32px monospace")
+	font := fl.LoadFont("20px monospace")
 	bunnies := make([]*Bunny, 0)
 
 	animate := func() {
@@ -77,10 +77,10 @@ func main() {
 		fl.SetTintColor(0, 0, 0, 255)
 		fl.DrawRectangle(0, 0, fl.Width, 40)
 		fl.SetTintColor(0, 228, 48, 255)
-		fl.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10, 20)
+		fl.DrawText(font, fmt.Sprintf("bunnies: %d", len(bunnies)), 120, 10)
 		fl.SetTintColor(190, 33, 55, 255)
-		fl.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10, 20)
-		DrawFPS(font, 10, 10, 20)
+		fl.DrawText(font, fmt.Sprintf("batched draw calls: %d", 1+len(bunnies)/maxBatchElements), 320, 10)
+		DrawFPS(font, 10, 10)
 	}
 
 	fl.SetAnimationLoop(animate)
@@ -120,7 +120,7 @@ func GetFPS() int {
 	return int(math.Round(FPS_CAPTURE_FRAMES_COUNT / sum))
 }
 
-func DrawFPS(font fl.Font, x, y float64, size int) {
+func DrawFPS(font fl.Font, x, y float64) {
 	fps := GetFPS()
 	if 15 <= fps && fps < 30 {
 		fl.SetTintColor(255, 161, 0, 255)
@@ -129,5 +129,5 @@ func DrawFPS(font fl.Font, x, y float64, size int) {
 	} else {
 		fl.SetTintColor(0, 158, 47, 255)
 	}
-	fl.DrawText(font, fmt.Sprintf("%d FPS", fps), x, y, size)
+	fl.DrawText(font, fmt.Sprintf("%d FPS", fps), x, y)
 }
