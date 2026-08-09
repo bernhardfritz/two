@@ -15,7 +15,10 @@ onmessage = (evt) => {
           ...evt.data.options
         })!,
         fontCanvas: evt.data.fontCanvas,
-        mouseX: 0,        
+        fontMap: evt.data.fontMap,
+        //@ts-ignore
+        fonts: self.fonts,
+        mouseX: 0,
         mouseY: 0,
         mouseButtons: 0,
       })

@@ -15,6 +15,25 @@ export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Mo
   canvas.style.height = '100%';
   canvas.style.display = 'block';
   const fontCanvas = document.createElement('canvas');
+  const fontMap = new Map<string, string>();
+  for (const styleSheet of document.styleSheets) {
+    try { // Accessing styleSheet.cssRules on a stylesheet hosted on a different domain will throw a SecurityError
+      for (const cssRule of styleSheet.cssRules) {
+        if (cssRule.constructor.name === 'CSSFontFaceRule') {
+          const cssText = cssRule.cssText;
+          const fontFamilyMatch = cssText.match(/font-family\s*:\s*['"]?([^'";}]+)['"]?/i);
+          const urlMatch = cssText.match(/url\(\s*['"]?([^'")]*)['"]?\s*\)/i);
+          if (fontFamilyMatch && urlMatch) {
+            const fontFamily = fontFamilyMatch[1].trim();
+            const url = urlMatch[1].trim();
+            fontMap.set(fontFamily, url);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`Skipped parsing CSSFontFaceRule for stylesheet: ${styleSheet.href}`);
+    }
+  }
   
   const createMouseDownHandler = withMiddleware<MouseEvent, { clientX: number, clientY: number, buttons: number }>((ev, next) => {
     ev.preventDefault();
@@ -71,7 +90,7 @@ export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Mo
     wasm.then((moduleObject) => {
       const offscreenCanvas = canvas.transferControlToOffscreen();
       const offscreenFontCanvas = fontCanvas.transferControlToOffscreen();
-      worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options, fontCanvas: offscreenFontCanvas, moduleObject }, [offscreenCanvas, offscreenFontCanvas]);
+      worker.postMessage({ type: 'canvas', canvas: offscreenCanvas, options, fontCanvas: offscreenFontCanvas, fontMap, moduleObject }, [offscreenCanvas, offscreenFontCanvas]);
       const observer = new ResizeObserver(() => {
         worker.postMessage({ type: 'resize', clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight, devicePixelRatio: window.devicePixelRatio });
       });
@@ -85,6 +104,8 @@ export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Mo
         ...options,
       })! as AugmentedWebGL2RenderingContext,
       fontCanvas,
+      fontMap,
+      fonts: document.fonts,
       baseURI: document.baseURI,
       mouseX: 0,
       mouseY: 0,
