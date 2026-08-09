@@ -10,10 +10,13 @@ jobs:
       examples: ${{ steps.examples.outputs.matrix }}
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-tinygo
+      - uses: bernhardfritz/setup-tinygo@v1
+        with:
+          go-version: '1.26.2'
+          tinygo-version: '0.41.1'
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: '24.19.0'
       - name: Install dependencies
         run: npm ci
       - name: Build library and plugin
@@ -37,10 +40,13 @@ jobs:
         example: ${{ fromJson(needs.build.outputs.examples) }}
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-tinygo
+      - uses: bernhardfritz/setup-tinygo@v1
+        with:
+          go-version: '1.26.2'
+          tinygo-version: '0.41.1'
       - uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: '24.19.0'
       - name: Download dist folder
         uses: actions/download-artifact@v8
         with:
@@ -56,21 +62,38 @@ jobs:
           name: ${{ matrix.example }}
           path: examples/${{ matrix.example }}/dist/
           retention-days: 1
-  deploy:
+  prepareDeployment:
     needs: build-examples
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v7
-      - name: Create directory
-        run: mkdir flatland
       - name: Download examples
         uses: actions/download-artifact@v8
         with:
-          path: flatland/
           pattern: '!dist'
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v5 # or specific "vX.X.X" version tag for this action
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./flatland/
+          path: ./
+  deploy:
+    if: github.ref == 'refs/heads/main'
+
+    # Add a dependency to the prepareDeployment job
+    needs: prepareDeployment
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5 # or specific "vX.X.X" version tag for this action
