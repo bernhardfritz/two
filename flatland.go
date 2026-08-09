@@ -168,10 +168,9 @@ func LoadFont(cssFont string) Font {
 }
 
 // Draws color-filled monospaced text
-func DrawText(font Font, text string, x, y float64, size int) {
-	scale := float64(size) / float64(font.size)
+func DrawText(font Font, text string, x, y float64) {
 	for pos, char := range text {
-		DrawTexture8f(font.texture, x+scale*float64(pos)*font.monospaceWidth, y, scale*font.monospaceWidth, float64(size), 1+float64((char-' ')%16)*(font.monospaceWidth+1), 1+float64((char-' ')/16)*float64(font.size+1), font.monospaceWidth, float64(font.size))
+		DrawTexture8f(font.texture, x+float64(pos)*font.monospaceWidth, y, font.monospaceWidth, font.size, 1+float64((char-' ')%16)*(font.monospaceWidth+1), 1+float64((char-' ')/16)*float64(font.size+1), font.monospaceWidth, float64(font.size))
 	}
 }
 
