@@ -7,7 +7,7 @@
     "webassembly",
     "webgl2"
   ],
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://pkg.go.dev/github.com/bernhardfritz/flatland",
   "bugs": "https://github.com/bernhardfritz/flatland/issues",
   "license": "MIT",
