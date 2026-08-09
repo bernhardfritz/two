@@ -6,6 +6,8 @@ const DEFAULT_FONT = `${DEFAULT_FONT_SIZE}px monospace`;
 export interface Context {
   gl: AugmentedWebGL2RenderingContext;
   fontCanvas: HTMLCanvasElement | OffscreenCanvas;
+  fontMap: Map<string, string>;
+  fonts: FontFaceSet;
   baseURI: string;
   mouseX: number;
   mouseY: number;
@@ -20,7 +22,12 @@ interface ImageBitmapItem {
 
 export async function bootstrap(context: Context, moduleObject: WebAssembly.Module) {
   const gl = context.gl;
-  await import(new URL(`${context.baseURI}wasm_exec.js`).href);
+  for (const [fontFamily, url] of context.fontMap) {
+    const fontFace = new FontFace(fontFamily, `url(${new URL(url, context.baseURI).href})`) ;
+    context.fonts.add(fontFace);
+    await fontFace.load();
+  }
+  await import(new URL('wasm_exec.js', context.baseURI).href);
   //@ts-ignore
   const go = new Go(); // Defined in // Providing the environment object, used in WebAssembly.instantiateStreaming.
   let wasm: WebAssembly.Instance;
