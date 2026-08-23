@@ -22,26 +22,19 @@ onmessage = (evt) => {
         mouseY: 0,
         mouseButtons: 0,
       })
+      context.gl.canvas.clientWidth = evt.data.width;
+      context.gl.canvas.clientHeight = evt.data.height;
       bootstrap(context, evt.data.moduleObject);
       break;
     case 'resize':
-      context.gl.canvas.clientWidth = evt.data.clientWidth;
-      context.gl.canvas.clientHeight = evt.data.clientHeight;
+      if (context.gl) {
+        context.gl.canvas.clientWidth = evt.data.width;
+        context.gl.canvas.clientHeight = evt.data.height;
+      }
       globalThis.devicePixelRatio = evt.data.devicePixelRatio;
       break;
-    case 'mousedown':
-      context.mouseX = evt.data.clientX;
-      context.mouseY = evt.data.clientY;
-      context.mouseButtons = evt.data.buttons;
-      break;
-    case 'mousemove':
-      context.mouseX = evt.data.clientX;
-      context.mouseY = evt.data.clientY;
-      break;
-    case 'mouseup':
-      context.mouseX = evt.data.clientX;
-      context.mouseY = evt.data.clientY;
-      context.mouseButtons = evt.data.buttons;
+    case 'mouse':
+      Object.assign(context, evt.data);
       break;
   }
 }
