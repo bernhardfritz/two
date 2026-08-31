@@ -14,7 +14,9 @@ export function registerCanvasMouseEventListener(canvas: HTMLCanvasElement, flat
       event.preventDefault();
       const boundingClientRect = canvas.getBoundingClientRect();
       switch (event.type) {
+        // @ts-ignore: Fallthrough case in switch
         case 'mousedown':
+          canvas.focus();
         case 'mouseup':
           flatlandMouseEventListenerObject.handleMouseEvent({ mouseX: event.clientX - boundingClientRect.left, mouseY: event.clientY - boundingClientRect.top, mouseButtons: event.buttons });
           break;

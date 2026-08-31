@@ -1,6 +1,9 @@
 package state
 
-import "github.com/bernhardfritz/flatland/internal/linmath"
+import (
+	"github.com/bernhardfritz/flatland/internal/bitset256"
+	"github.com/bernhardfritz/flatland/internal/linmath"
+)
 
 type PerInstanceData struct {
 	ModelMatrix   linmath.Mat4
@@ -15,4 +18,5 @@ var (
 	AnimationLoop    func()
 	TintColor        linmath.Vec4
 	TransformMatrix  linmath.Mat4
+	Keys             bitset256.Bitset256
 )

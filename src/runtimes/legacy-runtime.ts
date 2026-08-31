@@ -1,9 +1,10 @@
 import type { Context } from '../bootstrap.ts';
+import type { FlatlandKeyboardEventListenerObject } from '../canvas-events/keyboard-event.ts';
 import type { FlatlandMouseEventListenerObject } from '../canvas-events/mouse-event.ts';
 import type { FlatlandResizeEventListenerObject } from '../canvas-events/resize-event.ts';
 import type { AugmentedWebGL2RenderingContext } from '../renderer.ts';
 
-export interface RuntimeWithoutContext extends FlatlandMouseEventListenerObject, FlatlandResizeEventListenerObject {
+export interface RuntimeWithoutContext extends FlatlandMouseEventListenerObject, FlatlandKeyboardEventListenerObject, FlatlandResizeEventListenerObject {
   run(wasm: Promise<WebAssembly.Module>): void;
 }
 
@@ -23,8 +24,12 @@ export function createLegacyRuntime(canvas: HTMLCanvasElement, fontCanvas: HTMLC
     mouseX: 0,
     mouseY: 0,
     mouseButtons: 0,
+    keys: 0n,
     handleMouseEvent: (mouseEvent) => {
       Object.assign(runtime, mouseEvent)
+    },
+    handleKeyboardEvent: (keyboardEvent) => {
+      Object.assign(runtime, keyboardEvent);
     },
     handleResizeEvent: (_resizeEvent) => {
       // listening to resize events is not really necessary for non-worker runtimes because we can directly read clientWidth and clientHeight from canvas
