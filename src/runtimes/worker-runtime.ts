@@ -7,6 +7,9 @@ export function createWorkerRuntime(canvas: HTMLCanvasElement, fontCanvas: HTMLC
     handleMouseEvent: (mouseEvent) => {
       worker.postMessage({ type: 'mouse', ...mouseEvent });
     },
+    handleKeyboardEvent: (keyboardEvent) => {
+      worker.postMessage({ type: 'keyboard', ...keyboardEvent })
+    },
     handleResizeEvent: (resizeEvent) => {
       worker.postMessage({ type: 'resize', ...resizeEvent });
     },

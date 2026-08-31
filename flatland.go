@@ -180,8 +180,13 @@ func SetAnimationLoop(animate func()) {
 	select {}
 }
 
+// Check if a key is being pressed
+func IsKeyPressed(key uint8) bool {
+	return state.Keys.Get(key)
+}
+
 //export animationLoop
-func animationLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64) uint64 {
+func animationLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float64, keys uint64) uint64 {
 	DeltaTime = deltaTime
 	Width = width
 	Height = height
@@ -190,6 +195,11 @@ func animationLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float6
 	MouseButtons = int(mouseButtons)
 	state.TintColor = linmath.Vec4{1, 1, 1, 1}
 	state.TransformMatrix = linmath.NewIdentity()
+	state.Keys.Clear()
+	for keys > 0 {
+		state.Keys.Set(uint8(keys & 0xFF))
+		keys >>= 8
+	}
 	state.AnimationLoop()
 	ret := uint64(uintptr(unsafe.Pointer(unsafe.SliceData(state.Instances))))<<32 | uint64(len(state.Instances))
 	state.Instances = state.Instances[:0]

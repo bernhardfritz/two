@@ -1,10 +1,11 @@
-import { registerCanvasMouseEventListener, registerCanvasResizeEventListener, registerCanvasTouchEventListener } from './canvas-events';
+import { registerCanvasKeyboardEventListener, registerCanvasMouseEventListener, registerCanvasResizeEventListener, registerCanvasTouchEventListener } from './canvas-events';
 import { createLegacyRuntime, createWorkerRuntime, type RuntimeWithoutContext } from './runtimes';
 
 export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Module>, options?: WebGLContextAttributes) {
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   canvas.style.display = 'block';
+  canvas.tabIndex = 0;
   const fontCanvas = document.createElement('canvas');
   const fontMap = new Map<string, string>();
   for (const styleSheet of document.styleSheets) {
@@ -31,6 +32,7 @@ export function flatland(canvas: HTMLCanvasElement, wasm: Promise<WebAssembly.Mo
     : createLegacyRuntime(canvas, fontCanvas, fontMap, options);
   registerCanvasMouseEventListener(canvas, runtime);
   registerCanvasTouchEventListener(canvas, runtime);
+  registerCanvasKeyboardEventListener(canvas, runtime);
   if ('ResizeObserver' in window) {
     registerCanvasResizeEventListener(canvas, runtime);
   }

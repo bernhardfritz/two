@@ -12,6 +12,7 @@ export interface Context {
   mouseX: number;
   mouseY: number;
   mouseButtons: number;
+  keys: bigint;
 }
 
 interface ImageBitmapItem {
@@ -138,7 +139,7 @@ export async function bootstrap(context: Context, moduleObject: WebAssembly.Modu
     const render = renderer(gl, attributes);
     let previousTime = 0;
     const frameRequestCallback: FrameRequestCallback = (time) => {
-      const slice = (wasm.exports.animationLoop as (deltaTime: number, width: number, height: number, mouseX: number, mouseY: number, mouseButtons: number) => bigint)(time - previousTime, gl.canvas.clientWidth, gl.canvas.clientHeight, context.mouseX, context.mouseY, context.mouseButtons);
+      const slice = (wasm.exports.animationLoop as (deltaTime: number, width: number, height: number, mouseX: number, mouseY: number, mouseButtons: number, keys: bigint) => bigint)(time - previousTime, gl.canvas.clientWidth, gl.canvas.clientHeight, context.mouseX, context.mouseY, context.mouseButtons, context.keys);
       const ptr = Number(slice >> 32n);
       const len = Number(slice & 0xffffffffn);
       const bytes = new Uint8Array((wasm.exports.memory as WebAssembly.Memory).buffer, ptr, len);

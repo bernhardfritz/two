@@ -5,3 +5,4 @@
 - [Bunnymark](https://bernhardfritz.github.io/flatland/bunnymark)
 - [Custom font](https://bernhardfritz.github.io/flatland/custom-font)
 - [Isometric cube](https://bernhardfritz.github.io/flatland/isometric-cube)
+- [Keyboard](https://bernhardfritz.github.io/flatland/keyboard)
