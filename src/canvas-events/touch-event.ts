@@ -8,6 +8,7 @@ export function registerCanvasTouchEventListener(canvas: HTMLCanvasElement, flat
       const firstTouch = event.changedTouches[0];
       switch (event.type) {
         case 'touchstart':
+          canvas.focus();
           flatlandMouseEventListenerObject.handleMouseEvent({ mouseX: firstTouch.clientX - boundingClientRect.left, mouseY: firstTouch.clientY - boundingClientRect.top, mouseButtons: 1 });
           break;
         case 'touchend':

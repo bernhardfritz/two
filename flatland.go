@@ -25,9 +25,6 @@ var MouseX float64
 // Y coordinate of the mouse pointer
 var MouseY float64
 
-// buttons being pressed (if any)
-var MouseButtons int
-
 // Texture, tex data stored in GPU memory (VRAM)
 type Texture struct {
 	id     int
@@ -181,8 +178,13 @@ func SetAnimationLoop(animate func()) {
 }
 
 // Check if a key is being pressed
-func IsKeyPressed(key uint8) bool {
+func IsKeyPressed(key Key) bool {
 	return state.Keys.Get(key)
+}
+
+// Check if a mouse button is being pressed
+func IsMouseButtonPressed(mouseButton MouseButton) bool {
+	return state.MouseButtons&uint8(mouseButton) != 0
 }
 
 //export animationLoop
@@ -192,7 +194,7 @@ func animationLoop(deltaTime, width, height, mouseX, mouseY, mouseButtons float6
 	Height = height
 	MouseX = mouseX
 	MouseY = mouseY
-	MouseButtons = int(mouseButtons)
+	state.MouseButtons = uint8(mouseButtons)
 	state.TintColor = linmath.Vec4{1, 1, 1, 1}
 	state.TransformMatrix = linmath.NewIdentity()
 	state.Keys.Clear()

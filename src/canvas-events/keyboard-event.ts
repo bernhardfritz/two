@@ -44,7 +44,7 @@ export function registerCanvasKeyboardEventListener(canvas: HTMLCanvasElement, f
         keys <<= 8n;
         keys |= BigInt(keyCode);
       }
-      flatlandKeyboardEventListenerObject.handleKeyboardEvent({ keys }); // TODO on the go side we need bitset, e.g. consisting of [4]uint64 0-63, 64-127, 128-191, 192-255. clearing is as easy as setting all 4 values to 0. since it's a denseSet on javascript side we can stop right shifting as soon as value is 0
+      flatlandKeyboardEventListenerObject.handleKeyboardEvent({ keys });
     }
   };
   canvas.focus();
