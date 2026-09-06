@@ -17,7 +17,7 @@ type KeyData struct {
 	height float64
 }
 
-var keyMap = map[uint8]KeyData{
+var keyMap = map[fl.Key]KeyData{
 	fl.Backspace: {
 		x:      468,
 		y:      45,

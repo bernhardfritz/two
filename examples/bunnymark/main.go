@@ -38,7 +38,7 @@ func main() {
 	bunnies := make([]*Bunny, 0)
 
 	animate := func() {
-		if fl.MouseButtons == 1 {
+		if fl.IsMouseButtonPressed(fl.MouseButtonLeft) {
 			// Create more bunnies
 			for i := 0; i < 100; i++ {
 				b := &Bunny{}

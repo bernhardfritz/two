@@ -19,4 +19,5 @@ var (
 	TintColor        linmath.Vec4
 	TransformMatrix  linmath.Mat4
 	Keys             bitset256.Bitset256
+	MouseButtons     uint8
 )

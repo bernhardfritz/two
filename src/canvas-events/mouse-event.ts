@@ -9,7 +9,7 @@ export interface FlatlandMouseEventListenerObject {
 }
 
 export function registerCanvasMouseEventListener(canvas: HTMLCanvasElement, flatlandMouseEventListenerObject: FlatlandMouseEventListenerObject) {
-  const eventListenerObject = {
+  const mouseEventListenerObject = {
     handleEvent: (event: MouseEvent) => {
       event.preventDefault();
       const boundingClientRect = canvas.getBoundingClientRect();
@@ -26,13 +26,20 @@ export function registerCanvasMouseEventListener(canvas: HTMLCanvasElement, flat
       }
     }
   };
-  canvas.addEventListener('mousedown', eventListenerObject);
-  canvas.addEventListener('mousemove', eventListenerObject);
-  canvas.addEventListener('mouseup', eventListenerObject);
+  const pointerEventListenerObject = {
+    handleEvent: (event: PointerEvent) => {
+      event.preventDefault();
+    }
+  }
+  canvas.addEventListener('mousedown', mouseEventListenerObject);
+  canvas.addEventListener('mousemove', mouseEventListenerObject);
+  canvas.addEventListener('mouseup', mouseEventListenerObject);
+  canvas.addEventListener('contextmenu', pointerEventListenerObject);
 
   return () => {
-    canvas.removeEventListener('mousedown', eventListenerObject);
-    canvas.removeEventListener('mousemove', eventListenerObject);
-    canvas.removeEventListener('mouseup', eventListenerObject);
+    canvas.removeEventListener('mousedown', mouseEventListenerObject);
+    canvas.removeEventListener('mousemove', mouseEventListenerObject);
+    canvas.removeEventListener('mouseup', mouseEventListenerObject);
+    canvas.removeEventListener('contextmenu', pointerEventListenerObject);
   }
 }
